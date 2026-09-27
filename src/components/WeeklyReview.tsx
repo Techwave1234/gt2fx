@@ -68,6 +68,11 @@ export default function WeeklyReview({ trades }: Props) {
     const bad = a.byEmotion.filter(e => ['fomo', 'greedy', 'revengeful', 'impatient', 'fearful', 'bored'].includes(e.key))
     const worstEmotion = bad.sort((x, y) => y.count - x.count)[0]
     if (worstEmotion) out.push(`"${worstEmotion.key}" showed up in ${worstEmotion.count} trade(s) — tag it before entry next week and pause when it appears.`)
+    const kzLosing = a.byKillzone.filter(k => k.key !== 'No killzone' && k.count >= 2 && k.netPnl < 0)
+    if (kzLosing.length) out.push(`Killzone "${kzLosing[0].key}" is net negative (${fmtMoney(kzLosing[0].netPnl)} over ${kzLosing[0].count} trades) — consider trading only your best sessions.`)
+    const kzNoKz = a.byKillzone.find(k => k.key === 'No killzone')
+    if (kzNoKz && kzNoKz.count >= 3 && kzNoKz.netPnl < 0)
+      out.push(`${kzNoKz.count} trades outside any killzone lost ${fmtMoney(kzNoKz.netPnl)} — off-hours trading looks like a leak.`)
     const losers = a.bySetup.filter(s => s.netPnl < 0 && s.count >= 2)
     if (losers.length) out.push(`Setup "${losers[0].key}" lost ${fmtMoney(losers[0].netPnl)} over ${losers[0].count} trades — consider tightening its criteria or pausing it.`)
     const winners = a.bySetup.filter(s => s.netPnl > 0 && s.count >= 2)
@@ -135,6 +140,13 @@ export default function WeeklyReview({ trades }: Props) {
         rows={a.byEmotion}
         tone={k => (EMOTION_TONE[k] === 'good' ? 'var(--green)' : EMOTION_TONE[k] === 'bad' ? 'var(--red)' : 'var(--amber)')}
         emptyText="Tag emotions on your trades to spot your psychological patterns."
+      />
+
+      <GroupTable
+        title="By killzone"
+        rows={a.byKillzone}
+        tone={k => (k === 'No killzone' ? 'var(--muted)' : undefined)}
+        emptyText="Pick a killzone when logging trades to see which session actually pays you."
       />
 
       {rDist.counted > 0 && (

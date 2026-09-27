@@ -1,6 +1,7 @@
 import type { Trade } from '../types'
 import type { TradeCalc } from './calc'
 import { calcTrade } from './calc'
+import { killzoneById } from './killzones'
 
 export function toISODate(d: Date): string {
   const y = d.getFullYear()
@@ -80,6 +81,7 @@ export interface WeekAnalysis {
   netR: number
   bySetup: GroupStat[]
   byEmotion: GroupStat[]
+  byKillzone: GroupStat[]
   byDay: DayStat[]
   /** Closed trades in this week (for R-multiple analysis) */
   closedTrades: Trade[]
@@ -126,6 +128,7 @@ export function analyzeWeek(allTrades: Trade[], weekStart: Date): WeekAnalysis {
   let wins = 0, losses = 0, breakeven = 0, netPnl = 0, netR = 0
   const setups = new Map<string, GroupStat>()
   const emotions = new Map<string, GroupStat>()
+  const killzones = new Map<string, GroupStat>()
   const pnlByDate = new Map<string, number>()
 
   for (const t of closed) {
@@ -149,6 +152,11 @@ export function analyzeWeek(allTrades: Trade[], weekStart: Date): WeekAnalysis {
       addTrade(eg, t, c)
       emotions.set(e, eg)
     }
+
+    const kzKey = (t.killzone && killzoneById(t.killzone)?.label) || 'No killzone'
+    const kg = killzones.get(kzKey) ?? emptyGroup(kzKey)
+    addTrade(kg, t, c)
+    killzones.set(kzKey, kg)
   }
 
   const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short' })
@@ -175,6 +183,7 @@ export function analyzeWeek(allTrades: Trade[], weekStart: Date): WeekAnalysis {
     netR,
     bySetup: finalizeGroups(setups, 'pnl'),
     byEmotion: finalizeGroups(emotions, 'count'),
+    byKillzone: finalizeGroups(killzones, 'count'),
     byDay,
     closedTrades: closed,
     tradingDays: byDay.filter(d => d.count > 0).length,
