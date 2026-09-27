@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Trade } from '../types'
+import { EMOTION_OPTIONS } from '../types'
 import { calcTrade, fmtMoney, fmtNum, fmtR, resultColor } from '../lib/calc'
 import { killzoneById } from '../lib/killzones'
 
@@ -16,8 +17,16 @@ function priceDigits(pair: string): number {
 
 export default function TradeCard({ trade: t, index, onUpdate, onDelete }: Props) {
   const [open, setOpen] = useState(false)
+  const [pickingEmotion, setPickingEmotion] = useState(false)
   const c = calcTrade(t)
   const d = priceDigits(t.pair)
+
+  /** Close as a loss with one tapped emotion merged into any existing tags */
+  function closeLossWith(emotion?: string) {
+    const emotions = emotion && !t.emotions.includes(emotion) ? [...t.emotions, emotion] : t.emotions
+    onUpdate(t.id, { result: 'loss', emotions })
+    setPickingEmotion(false)
+  }
 
   return (
     <article className={`card trade-card ${open ? 'expanded' : ''}`}>
@@ -87,12 +96,27 @@ export default function TradeCard({ trade: t, index, onUpdate, onDelete }: Props
             <p><a href={t.screenshotUrl} target="_blank" rel="noreferrer">📸 View screenshot</a></p>
           )}
 
-          {t.result === 'open' && (
+          {t.result === 'open' && !pickingEmotion && (
             <div className="quick-close">
               <small>Close as:</small>
               <button type="button" className="btn mini win" onClick={() => onUpdate(t.id, { result: 'win' })}>Win</button>
-              <button type="button" className="btn mini loss" onClick={() => onUpdate(t.id, { result: 'loss' })}>Loss</button>
+              <button type="button" className="btn mini loss" onClick={() => setPickingEmotion(true)}>Loss</button>
               <button type="button" className="btn mini be" onClick={() => onUpdate(t.id, { result: 'breakeven' })}>BE</button>
+            </div>
+          )}
+
+          {t.result === 'open' && pickingEmotion && (
+            <div className="loss-emo">
+              <small>Close as <b>LOSS</b> — why did it lose? One tap:</small>
+              <div className="chips">
+                {EMOTION_OPTIONS.map(e => (
+                  <button key={e} type="button" className="chip" onClick={() => closeLossWith(e)}>{e}</button>
+                ))}
+              </div>
+              <div className="loss-emo-actions">
+                <button type="button" className="btn mini ghost" onClick={() => setPickingEmotion(false)}>Cancel</button>
+                <button type="button" className="btn mini loss" onClick={() => closeLossWith()}>Tag later</button>
+              </div>
             </div>
           )}
 
