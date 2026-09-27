@@ -6,12 +6,14 @@
 
 A dark, mobile-first trading journal web app with:
 
-- **Full trade fields** — date, time, session, pair, direction, setup, entry/SL/TP, exit, lots, risk %, balance, confidence, emotions, notes, lessons, screenshot link
-- **Live calculations** — R:R, risk in $ and %, suggested lot size, realized P/L in pips/$ and R-multiple
-- **Collapsible trade cards** with filters (today / date / all, result, search)
-- **Daily summary + psychology checklist** (followed plan, respected risk, no revenge, no overtrading, journaled, stopped at limit)
-- **Stats** — win rate, net P/L, net R, expectancy, streaks, by-pair breakdown, 14-day P/L chart
-- **Floating AI coach** — offline mode (fills trades from text, critiques your journal, sizes positions, extracts lessons) plus optional real AI via OpenAI-compatible / Gemini / OpenRouter APIs (key stored only in your browser)
+- **Paper-journal layout** — trade boxes with time, entry/SL/TP/exit, lot, risk, reward, R:R ratio, strategy, entry/exit reasons, lesson learned, emotion, followed-plan Yes/No, plus daily totals, checklist, "Today's Biggest Learning" and "Plan for Tomorrow"
+- **Top-down (ICT/SMC) fields** — HTF/MTF/LTF bias with live alignment checks, POI type, entry model
+- **Killzone picker** — Asia/London/NY/London-Close with automatic detection from your clock (NY-anchored, DST-correct)
+- **57 instruments** — all 28 FX pairs, metals, indices, crypto, energies, each with correct pip math
+- **Live calculations** — R:R, risk $ and %, reward $, suggested lot, realized P/L and R-multiple
+- **Weekly Review** — week navigation, day-by-day P/L, per-setup / per-emotion / per-killzone win-rate tables, R-multiple histogram, auto coach notes
+- **Backups** — one-tap JSON export, merge/replace import with validation, CSV for Excel/Sheets, Sunday auto-backup, stale-backup reminder, printable daily sheet
+- **Floating AI coach** — offline mode (fills trades from text, critiques your journal, sizes positions, extracts lessons) plus optional real AI via OpenAI / Gemini / OpenRouter (key stored only in your browser)
 
 All data stays in your browser via `localStorage` — nothing is uploaded.
 
