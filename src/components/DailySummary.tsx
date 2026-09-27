@@ -11,13 +11,24 @@ interface Props {
   onDayNotes: (patch: Partial<DayNotes>) => void
   onNewTrade: () => void
   onPrint: () => void
+  /** Consecutive fully-completed checklist days (computed over all journal days) */
+  streak?: { current: number; best: number }
 }
 
-export default function DailySummary({ date, trades, checklist, dayNotes, onToggle, onDayNotes, onNewTrade, onPrint }: Props) {
+export default function DailySummary({ date, trades, checklist, dayNotes, onToggle, onDayNotes, onNewTrade, onPrint, streak }: Props) {
   const closed = trades.filter(t => t.result !== 'open')
   const s = summarize(closed)
   const done = CHECKLIST_ITEMS.filter(i => checklist[i.key]).length
   const score = Math.round((done / CHECKLIST_ITEMS.length) * 100)
+
+  const bestStreak = streak?.best ?? 0
+  const curStreak = streak?.current ?? 0
+  const streakLabel =
+    curStreak > 0
+      ? `🔥 ${curStreak} day${curStreak === 1 ? '' : 's'} clean`
+      : bestStreak > 0
+        ? `Streak broken — best was ${bestStreak}`
+        : 'Complete the full checklist to start a streak'
 
   // Paper bottom row: Total trades · Win Rate · Total Profit · Best Trade
   const decided = s.wins + s.losses
@@ -77,6 +88,9 @@ export default function DailySummary({ date, trades, checklist, dayNotes, onTogg
 
       <div className="checklist-head">
         <span>Checklist</span>
+        <span className="streak-chip" title="Consecutive days with the full checklist complete">
+          {streakLabel}
+        </span>
         <span className="score">{done}/{CHECKLIST_ITEMS.length} · {score}%</span>
       </div>
       <div className="checklist">
@@ -91,7 +105,7 @@ export default function DailySummary({ date, trades, checklist, dayNotes, onTogg
           </label>
         ))}
       </div>
-      {score === 100 && <p className="all-good">✅ Full discipline day — this is how accounts grow.</p>}
+      {score === 100 && <p className="all-good">✅ Full discipline day — this is how accounts grow. {bestStreak > 0 && `(best streak: ${bestStreak})`}</p>}
 
       <label className="field">
         <span>Today's biggest learning</span>

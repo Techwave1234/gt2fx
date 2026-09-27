@@ -61,6 +61,44 @@ export default function App() {
     journal.setChecklistItem(today, key, value)
   }
 
+  /** Consecutive days (ending today or yesterday) with the full checklist complete */
+  const disciplineStreak = useMemo(() => {
+    const ALL = 6
+    const complete = (d: Date): boolean => {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const cl = journal.checklists[key]
+      if (!cl) return false
+      return Object.values(cl).filter(Boolean).length === ALL
+    }
+    let current = 0
+    const cursor = new Date()
+    // today counts only if already complete; otherwise streak counts back from yesterday
+    if (complete(cursor)) current++
+    for (;;) {
+      cursor.setDate(cursor.getDate() - 1)
+      if (complete(cursor)) current++
+      else break
+    }
+    // best: walk all recorded checklist days
+    const days = Object.entries(journal.checklists)
+      .filter(([, cl]) => Object.values(cl).filter(Boolean).length === ALL)
+      .map(([key]) => key)
+      .sort()
+    let best = 0
+    let run = 0
+    let prev: Date | null = null
+    for (const key of days) {
+      const d = new Date(`${key}T00:00:00`)
+      const consecutive = prev !== null && d.getTime() - prev.getTime() === 86400000
+      run = consecutive ? run + 1 : 1
+      best = Math.max(best, run)
+      prev = d
+    }
+    // today/yesterday run may exceed the historical best if it's still growing
+    if (current > best) best = current
+    return { current, best }
+  }, [journal.checklists])
+
   return (
     <div className="app">
       <header className="topbar">
@@ -99,6 +137,7 @@ export default function App() {
           onDayNotes={patch => journal.setDayNotes(today, patch)}
           onNewTrade={() => openNewForm()}
           onPrint={() => window.print()}
+          streak={disciplineStreak}
         />
 
         <StatsBar trades={journal.trades} />
