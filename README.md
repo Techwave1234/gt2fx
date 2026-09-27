@@ -1,8 +1,6 @@
 # GT2FX Trading Journal 📓
 
-[![test](https://github.com/YOUR-USERNAME/gt2fx/actions/workflows/test.yml/badge.svg)](https://github.com/YOUR-USERNAME/gt2fx/actions/workflows/test.yml)
-
-> 🏷️ After pushing to GitHub, replace both `YOUR-USERNAME` occurrences above with your GitHub username to activate the badge.
+[![test](https://github.com/Techwave1234/gt2fx/actions/workflows/test.yml/badge.svg)](https://github.com/Techwave1234/gt2fx/actions/workflows/test.yml)
 
 A dark, mobile-first trading journal web app with:
 
