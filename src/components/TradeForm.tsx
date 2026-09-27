@@ -5,6 +5,7 @@ import { calcTrade, fmtMoney, fmtNum, fmtR } from '../lib/calc'
 import { newTradeDefaults } from '../hooks/useJournal'
 import { KILLZONES, detectKillzone, killzoneById } from '../lib/killzones'
 import { PAIR_SYMBOLS } from '../lib/pairs'
+import { PRETRADE_CHECKS, alignmentOf, evalPreTrade, type Alignment } from '../lib/pretrade'
 
 interface Props {
   open: boolean
@@ -12,6 +13,9 @@ interface Props {
   onSave: (t: Trade) => void
   /** Partial trade to prefill (e.g. from AI "fill it") */
   prefill?: Partial<Trade> | null
+  /** When true, saving is blocked until every pre-trade check passes */
+  enforce?: boolean
+  onToggleEnforce?: (v: boolean) => void
 }
 
 function NumField(props: {
@@ -39,7 +43,7 @@ function NumField(props: {
   )
 }
 
-export default function TradeForm({ open, onClose, onSave, prefill }: Props) {
+export default function TradeForm({ open, onClose, onSave, prefill, enforce = false, onToggleEnforce }: Props) {
   const [t, setT] = useState<Trade>(() => ({ ...newTradeDefaults(), ...(prefill ?? {}) }))
 
   // Re-initialize when prefill changes while closed→open
@@ -69,16 +73,13 @@ export default function TradeForm({ open, onClose, onSave, prefill }: Props) {
   const detected = useMemo(() => detectKillzone(t.date, t.time), [t.date, t.time])
   const selectedKz = killzoneById(t.killzone)
 
+  // Pre-trade checklist, re-evaluated live as the trade is filled in
+  const results = useMemo(() => evalPreTrade(t), [t])
+  const passed = results.filter(r => r.pass).length
+  const allPass = passed === PRETRADE_CHECKS.length
+
   // Top-down alignment: are HTF/MTF/LTF all pointing the same way as the trade?
-  const aligned = useMemo<'ok' | 'partial' | 'counter' | 'none'>(() => {
-    if (!t.biasHTF || !t.biasMTF || !t.biasLTF) return 'none'
-    const dirBull = t.direction === 'long'
-    const htfAgrees = t.biasHTF === (dirBull ? 'bullish' : 'bearish')
-    const allAgree = [t.biasHTF, t.biasMTF, t.biasLTF].every(b => b === (dirBull ? 'bullish' : 'bearish'))
-    if (allAgree) return 'ok'
-    if (htfAgrees) return 'partial'
-    return 'counter'
-  }, [t.biasHTF, t.biasMTF, t.biasLTF, t.direction])
+  const aligned = useMemo<Alignment>(() => alignmentOf(t), [t])
 
   if (!open) return null
 
@@ -262,6 +263,29 @@ export default function TradeForm({ open, onClose, onSave, prefill }: Props) {
           <p className="warn">💡 POI marked but no entry model — how exactly do you trigger?</p>
         )}
 
+        <div className="pretrade">
+          <div className="topdown-head">
+            <span>Pre-trade checklist</span>
+            <span className={allPass ? 'pt-score all' : 'pt-score'}>{passed}/{PRETRADE_CHECKS.length} passed</span>
+          </div>
+          <div className="pt-list">
+            {results.map(r => (
+              <div key={r.check.id} className={r.pass ? 'pt-item pass' : 'pt-item fail'}>
+                <span className="pt-mark">{r.pass ? '✓' : '✗'}</span>
+                <span>{r.check.label}</span>
+              </div>
+            ))}
+          </div>
+          <label className="pt-toggle">
+            <input
+              type="checkbox"
+              checked={enforce}
+              onChange={e => onToggleEnforce?.(e.target.checked)}
+            />
+            <span>Block saving until all checks pass</span>
+          </label>
+        </div>
+
         <div className="field">
           <span>Emotions during trade</span>
           <div className="chips">
@@ -303,7 +327,9 @@ export default function TradeForm({ open, onClose, onSave, prefill }: Props) {
 
         <footer>
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn primary">Save trade</button>
+          <button type="submit" className="btn primary" disabled={enforce && !allPass}>
+            {enforce && !allPass ? `${PRETRADE_CHECKS.length - passed} check${PRETRADE_CHECKS.length - passed === 1 ? '' : 's'} left` : 'Save trade'}
+          </button>
         </footer>
       </form>
     </div>

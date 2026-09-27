@@ -16,7 +16,14 @@ function todayKey(): string {
 }
 
 function emptyState(): JournalState {
-  return { trades: [], checklists: {}, dayNotes: {}, aiConfig: { provider: 'offline', apiKey: '', model: '' }, aiHistory: [] }
+  return {
+    trades: [],
+    checklists: {},
+    dayNotes: {},
+    preTradeEnforce: false,
+    aiConfig: { provider: 'offline', apiKey: '', model: '' },
+    aiHistory: [],
+  }
 }
 
 function load(): JournalState {
@@ -28,6 +35,7 @@ function load(): JournalState {
       trades: Array.isArray(parsed.trades) ? parsed.trades : [],
       checklists: parsed.checklists ?? {},
       dayNotes: parsed.dayNotes ?? {},
+      preTradeEnforce: parsed.preTradeEnforce === true,
       aiConfig: { provider: 'offline', apiKey: '', model: '', ...parsed.aiConfig },
       aiHistory: Array.isArray(parsed.aiHistory) ? parsed.aiHistory : [],
     }
@@ -113,6 +121,10 @@ export function useJournal() {
     setState(s => ({ ...s, aiConfig: { ...s.aiConfig, ...patch } }))
   }, [])
 
+  const setPreTradeEnforce = useCallback((v: boolean) => {
+    setState(s => ({ ...s, preTradeEnforce: v }))
+  }, [])
+
   const setAIHistory = useCallback((history: JournalState['aiHistory']) => {
     setState(s => ({ ...s, aiHistory: history.slice(-60) }))
   }, [])
@@ -161,6 +173,8 @@ export function useJournal() {
     setAIConfig,
     aiHistory: state.aiHistory,
     setAIHistory,
+    preTradeEnforce: state.preTradeEnforce,
+    setPreTradeEnforce,
     importData,
     clearAll,
   }

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:sunday": "tsx scripts/test-sunday.ts",
     "test:roundtrip": "tsx scripts/test-roundtrip.ts",
-    "test": "npm run test:sunday && npm run test:roundtrip"
+    "test:pretrade": "tsx scripts/test-pretrade.ts",
+    "test": "npm run test:sunday && npm run test:roundtrip && npm run test:pretrade"
   },
   "dependencies": {
     "react": "^19.1.0",

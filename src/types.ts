@@ -76,6 +76,8 @@ export interface JournalState {
   checklists: Record<string, ChecklistState>
   /** Per-day paper-sheet fields (risk per trade, biggest learning, plan for tomorrow) */
   dayNotes: Record<string, DayNotes>
+  /** When true, the trade form blocks saving until the pre-trade checklist passes */
+  preTradeEnforce: boolean
   aiConfig: AIConfig
   aiHistory: AIMessage[]
 }

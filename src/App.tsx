@@ -163,6 +163,8 @@ export default function App() {
         onClose={() => setFormOpen(false)}
         onSave={saveTrade}
         prefill={prefill}
+        enforce={journal.preTradeEnforce}
+        onToggleEnforce={journal.setPreTradeEnforce}
       />
 
       <AICoach
