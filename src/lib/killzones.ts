@@ -55,6 +55,47 @@ export interface KillzoneDetection {
   localTime: string
 }
 
+export interface KillzoneStatus {
+  /** Killzone active right now, or null when off-hours */
+  active: Killzone | null
+  /** HH:MM:SS in New York */
+  nyTime: string
+  /** Minutes elapsed / remaining in the active window */
+  activeElapsed: number | null
+  activeTotal: number | null
+  /** Next killzone to start and how many minutes until it opens */
+  next: { kz: Killzone; minutesUntil: number }
+}
+
+/** Live status for the widget: active killzone, progress and next window. */
+export function killzoneStatus(d = new Date()): KillzoneStatus | null {
+  const ny = nyMinutes(d)
+  if (ny === null) return null
+  const hh = String(Math.floor(ny / 60)).padStart(2, '0')
+  const mm = String(ny % 60).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+
+  let active: Killzone | null = null
+  let activeElapsed: number | null = null
+  let activeTotal: number | null = null
+  let next = { kz: KILLZONES[0], minutesUntil: Infinity }
+
+  for (const kz of KILLZONES) {
+    const s = toMin(kz.start)
+    const e = toMin(kz.end)
+    const total = (e - s + 1440) % 1440
+    const inZone = s <= e ? ny >= s && ny < e : ny >= s || ny < e
+    if (inZone) {
+      active = kz
+      activeTotal = total
+      activeElapsed = (ny - s + 1440) % 1440
+    }
+    const until = (s - ny + 1440) % 1440
+    if (until > 0 && until < next.minutesUntil) next = { kz, minutesUntil: until }
+  }
+  return { active, nyTime: `${hh}:${mm}:${ss}`, activeElapsed, activeTotal, next }
+}
+
 /**
  * Detect which killzone a local date+time falls in.
  * `date` = YYYY-MM-DD, `time` = HH:MM (local). Falls back to `new Date()` when time is blank.

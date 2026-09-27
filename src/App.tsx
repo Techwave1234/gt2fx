@@ -9,6 +9,7 @@ import WeeklyReview from './components/WeeklyReview'
 import DataBackup from './components/DataBackup'
 import BackupReminderBanner from './components/BackupReminderBanner'
 import PrintableSheet from './components/PrintableSheet'
+import KillzoneClock from './components/KillzoneClock'
 import AICoach from './components/AICoach'
 
 function todayKey(): string {
@@ -84,6 +85,7 @@ export default function App() {
           aiConfig={journal.aiConfig}
           aiHistory={journal.aiHistory}
         />
+        <KillzoneClock />
         {tab === 'review' ? (
           <WeeklyReview trades={journal.trades} />
         ) : (
