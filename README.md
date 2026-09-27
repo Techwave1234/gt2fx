@@ -2,6 +2,8 @@
 
 [![test](https://github.com/Techwave1234/gt2fx/actions/workflows/test.yml/badge.svg)](https://github.com/Techwave1234/gt2fx/actions/workflows/test.yml)
 
+▶ **Use it here:** https://techwave1234.github.io/gt2fx/
+
 A dark, mobile-first trading journal web app with:
 
 - **Paper-journal layout** — trade boxes with time, entry/SL/TP/exit, lot, risk, reward, R:R ratio, strategy, entry/exit reasons, lesson learned, emotion, followed-plan Yes/No, plus daily totals, checklist, "Today's Biggest Learning" and "Plan for Tomorrow"
