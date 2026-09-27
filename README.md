@@ -1,5 +1,9 @@
 # GT2FX Trading Journal 📓
 
+[![test](https://github.com/YOUR-USERNAME/gt2fx/actions/workflows/test.yml/badge.svg)](https://github.com/YOUR-USERNAME/gt2fx/actions/workflows/test.yml)
+
+> 🏷️ After pushing to GitHub, replace both `YOUR-USERNAME` occurrences above with your GitHub username to activate the badge.
+
 A dark, mobile-first trading journal web app with:
 
 - **Full trade fields** — date, time, session, pair, direction, setup, entry/SL/TP, exit, lots, risk %, balance, confidence, emotions, notes, lessons, screenshot link
@@ -18,4 +22,7 @@ npm install
 npm run dev      # dev server (prints a local URL)
 npm run build    # typecheck + production build into dist/
 npm run preview  # serve the production build
+npm test         # Sunday-backup + backup round-trip suites (64 checks)
 ```
+
+CI (`.github/workflows/test.yml`) runs the typecheck + test suite on every push.
