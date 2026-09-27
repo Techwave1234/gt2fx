@@ -509,7 +509,8 @@ input, select, textarea, button { font-family: inherit; }
 
 /* ---------- Emotion → R impact ---------- */
 .emotion-impact { margin-top: 18px; }
-.emotion-impact h3 { font-size: 13px; margin: 0 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.ei-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.emotion-impact h3 { font-size: 13px; margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .ei-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .ei-row { display: grid; grid-template-columns: 84px 1fr 64px 28px; gap: 8px; align-items: center; font-size: 12px; }
 .ei-name { font-weight: 700; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

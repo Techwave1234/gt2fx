@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Trade } from '../types'
 import { fmtMoney, fmtR } from '../lib/calc'
-import { addWeeks, analyzeWeek, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
-import { calcTrade } from '../lib/calc'
+import { addWeeks, analyzeWeek, emotionImpactOf, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
 
 interface Props {
   trades: Trade[]
@@ -61,21 +60,12 @@ export default function WeeklyReview({ trades }: Props) {
   const a = useMemo(() => analyzeWeek(trades, weekStart), [trades, weekStart])
   const rDist = useMemo(() => rDistribution(a.closedTrades), [a.closedTrades])
 
-  // Emotion → R impact: avg R per emotion tag + a "no tags" baseline, worst first
-  const emotionImpact = useMemo(() => {
-    const rows = a.byEmotion
-      .filter(e => e.avgR !== null && e.count >= 1)
-      .map(e => ({ key: e.key, count: e.count, avgR: e.avgR as number }))
-      .sort((x, y) => x.avgR - y.avgR)
-    let rSum = 0, rN = 0, tagless = 0
-    for (const t of a.closedTrades) {
-      if (t.emotions.length > 0) continue
-      tagless++
-      const r = calcTrade(t).rMultiple
-      if (r !== null && isFinite(r)) { rSum += r; rN++ }
-    }
-    return { rows, baseAvg: rN ? rSum / rN : null, baseCount: tagless }
-  }, [a])
+  // Emotion → R impact: this week or all-time, avg R per tag + untagged baseline
+  const [eScope, setEScope] = useState<'week' | 'all'>('week')
+  const emotionImpact = useMemo(
+    () => emotionImpactOf(eScope === 'all' ? trades.filter(t => t.result !== 'open') : a.closedTrades),
+    [eScope, a.closedTrades, trades],
+  )
 
   const now = startOfWeek(new Date())
   const isThisWeek = weekStart.getTime() === now.getTime()
@@ -169,11 +159,23 @@ export default function WeeklyReview({ trades }: Props) {
         emptyText="Pick a killzone when logging trades to see which session actually pays you."
       />
 
-      {emotionImpact.rows.length > 0 && (
-        <div className="emotion-impact">
-          <h3>Emotion → R impact</h3>
-          <p className="sub">Average R of trades tagged with each emotion — worst first. Center line = 0R.</p>
+      <div className="emotion-impact">
+          <div className="ei-head">
+            <h3>Emotion → R impact</h3>
+            <div className="seg small">
+              <button type="button" className={eScope === 'week' ? 'active' : ''} onClick={() => setEScope('week')}>This week</button>
+              <button type="button" className={eScope === 'all' ? 'active' : ''} onClick={() => setEScope('all')}>All time</button>
+            </div>
+          </div>
+          <p className="sub">
+            {eScope === 'all' ? 'Every tagged trade across all weeks' : "This week's tagged trades"} — worst first. Center line = 0R.
+          </p>
           <div className="ei-rows">
+            {emotionImpact.rows.length === 0 && (
+              <p className="empty small-empty">
+                No tagged trades {eScope === 'all' ? 'ever' : 'this week'} — tag emotions when closing losses and your patterns will chart here.
+              </p>
+            )}
             {emotionImpact.rows.map(e => {
               const maxAbs = Math.max(
                 0.5,
@@ -220,7 +222,6 @@ export default function WeeklyReview({ trades }: Props) {
             })()}
           </div>
         </div>
-      )}
 
       <GroupTable
         title="By pair"

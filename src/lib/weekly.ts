@@ -200,6 +200,48 @@ export function analyzeWeek(allTrades: Trade[], weekStart: Date): WeekAnalysis {
   }
 }
 
+export interface EmotionImpactRow {
+  key: string
+  /** Trades with a measurable R carrying this tag */
+  count: number
+  avgR: number
+}
+
+export interface EmotionImpact {
+  rows: EmotionImpactRow[]
+  /** Average R of trades with NO emotion tags (the unemotional baseline) */
+  baseAvg: number | null
+  baseCount: number
+}
+
+/** Average R per emotion tag + untagged baseline, worst first. */
+export function emotionImpactOf(closedTrades: Trade[]): EmotionImpact {
+  const acc = new Map<string, { count: number; rSum: number; rN: number }>()
+  let baseRSum = 0, baseRN = 0, baseCount = 0
+  for (const t of closedTrades) {
+    const r = calcTrade(t).rMultiple
+    if (r === null || !isFinite(r)) continue
+    if (t.emotions.length === 0) {
+      baseCount++
+      baseRSum += r
+      baseRN++
+      continue
+    }
+    for (const e of t.emotions) {
+      const a = acc.get(e) ?? { count: 0, rSum: 0, rN: 0 }
+      a.count++
+      a.rSum += r
+      a.rN++
+      acc.set(e, a)
+    }
+  }
+  const rows = [...acc.entries()]
+    .filter(([, v]) => v.rN > 0)
+    .map(([key, v]) => ({ key, count: v.count, avgR: v.rSum / v.rN }))
+    .sort((x, y) => x.avgR - y.avgR)
+  return { rows, baseAvg: baseRN ? baseRSum / baseRN : null, baseCount }
+}
+
 const R_BUCKETS: { label: string; tone: RBucket['tone']; test: (r: number) => boolean }[] = [
   { label: '≤−2R', tone: 'bad', test: r => r <= -2 },
   { label: '−2…−1', tone: 'bad', test: r => r >= -2 && r < -1 },
