@@ -149,6 +149,12 @@ export default function WeeklyReview({ trades }: Props) {
         emptyText="Pick a killzone when logging trades to see which session actually pays you."
       />
 
+      <GroupTable
+        title="By pair"
+        rows={a.byPair}
+        emptyText="Log a few trades and your best and worst instruments will show up here."
+      />
+
       {rDist.counted > 0 && (
         <div className="r-histogram">
           <h3>R-multiple distribution</h3>

@@ -82,6 +82,7 @@ export interface WeekAnalysis {
   bySetup: GroupStat[]
   byEmotion: GroupStat[]
   byKillzone: GroupStat[]
+  byPair: GroupStat[]
   byDay: DayStat[]
   /** Closed trades in this week (for R-multiple analysis) */
   closedTrades: Trade[]
@@ -129,6 +130,7 @@ export function analyzeWeek(allTrades: Trade[], weekStart: Date): WeekAnalysis {
   const setups = new Map<string, GroupStat>()
   const emotions = new Map<string, GroupStat>()
   const killzones = new Map<string, GroupStat>()
+  const pairs = new Map<string, GroupStat>()
   const pnlByDate = new Map<string, number>()
 
   for (const t of closed) {
@@ -157,6 +159,11 @@ export function analyzeWeek(allTrades: Trade[], weekStart: Date): WeekAnalysis {
     const kg = killzones.get(kzKey) ?? emptyGroup(kzKey)
     addTrade(kg, t, c)
     killzones.set(kzKey, kg)
+
+    const pairKey = t.pair || 'Unknown'
+    const pg = pairs.get(pairKey) ?? emptyGroup(pairKey)
+    addTrade(pg, t, c)
+    pairs.set(pairKey, pg)
   }
 
   const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short' })
@@ -184,6 +191,7 @@ export function analyzeWeek(allTrades: Trade[], weekStart: Date): WeekAnalysis {
     bySetup: finalizeGroups(setups, 'pnl'),
     byEmotion: finalizeGroups(emotions, 'count'),
     byKillzone: finalizeGroups(killzones, 'count'),
+    byPair: finalizeGroups(pairs, 'pnl'),
     byDay,
     closedTrades: closed,
     tradingDays: byDay.filter(d => d.count > 0).length,
