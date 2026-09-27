@@ -507,6 +507,27 @@ input, select, textarea, button { font-family: inherit; }
   .gt-head, .gt-row { font-size: 11.5px; }
 }
 
+/* ---------- Emotion → R impact ---------- */
+.emotion-impact { margin-top: 18px; }
+.emotion-impact h3 { font-size: 13px; margin: 0 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.ei-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.ei-row { display: grid; grid-template-columns: 84px 1fr 64px 28px; gap: 8px; align-items: center; font-size: 12px; }
+.ei-name { font-weight: 700; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ei-row.baseline .ei-name { color: var(--muted); font-weight: 600; font-style: italic; }
+.ei-track { display: flex; height: 16px; border-radius: 8px; overflow: hidden; background: var(--bg-soft); border: 1px solid var(--line); }
+.ei-half { flex: 1; display: flex; position: relative; }
+.ei-half.left { justify-content: flex-end; border-right: 1px solid var(--muted); }
+.ei-half.right { justify-content: flex-start; }
+.ei-bar { height: 100%; border-radius: 0; }
+.ei-half.left .ei-bar { border-radius: 6px 0 0 6px; }
+.ei-half.right .ei-bar { border-radius: 0 6px 6px 0; }
+.ei-bar.pos { background: var(--green); opacity: 0.85; }
+.ei-bar.neg { background: var(--red); opacity: 0.85; }
+.ei-bar.muted { background: var(--muted); opacity: 0.5; }
+.ei-val { font-weight: 800; text-align: right; }
+.ei-val.muted-val { color: var(--muted); font-weight: 600; }
+.ei-n { color: var(--muted); text-align: right; font-size: 11px; }
+
 /* ---------- Desktop tweaks ---------- */
 @media (min-width: 640px) {
   .app { padding-bottom: 40px; }
