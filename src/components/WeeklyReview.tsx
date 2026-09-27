@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Trade } from '../types'
-import { fmtMoney, fmtR } from '../lib/calc'
+import { calcTrade, fmtMoney, fmtR } from '../lib/calc'
 import { addWeeks, analyzeWeek, emotionImpactOf, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
 import { downloadCsv, weeklySummaryCsv } from '../lib/csv'
 
@@ -105,6 +105,20 @@ export default function WeeklyReview({ trades }: Props) {
     return out
   }, [a, emotionImpact])
 
+  // All-time best and worst closed trades by realized P/L
+  const extremes = useMemo(() => {
+    let best: { t: Trade; pnl: number; r: number | null } | null = null
+    let worst: { t: Trade; pnl: number; r: number | null } | null = null
+    for (const t of trades) {
+      if (t.result === 'open') continue
+      const c = calcTrade(t)
+      if (c.pnl === null) continue
+      if (!best || c.pnl > best.pnl) best = { t, pnl: c.pnl, r: c.rMultiple }
+      if (!worst || c.pnl < worst.pnl) worst = { t, pnl: c.pnl, r: c.rMultiple }
+    }
+    return { best, worst }
+  }, [trades])
+
   function exportWeeklyCsv() {
     downloadCsv(weeklySummaryCsv(trades), `gt2fx-weekly-summary-${todayIso()}.csv`)
     setCsvDone(true)
@@ -128,6 +142,33 @@ export default function WeeklyReview({ trades }: Props) {
           <button type="button" className="btn mini ghost" onClick={() => setWeekStart(w => addWeeks(w, 1))} disabled={isThisWeek} aria-label="Next week">→</button>
         </div>
       </header>
+
+      {(extremes.best || extremes.worst) && (
+        <div className="extremes">
+          {extremes.best && (
+            <div className="extreme best">
+              <small>🏆 All-time best trade</small>
+              <b>{fmtMoney(extremes.best.pnl)}</b>
+              <span>
+                {extremes.best.t.pair} {extremes.best.t.direction === 'long' ? '▲' : '▼'} · {extremes.best.t.date}
+                {extremes.best.r !== null && <> · {fmtR(extremes.best.r)}</>}
+                {extremes.best.t.setup && <> · {extremes.best.t.setup}</>}
+              </span>
+            </div>
+          )}
+          {extremes.worst && (
+            <div className="extreme worst">
+              <small>💀 All-time worst trade</small>
+              <b>{fmtMoney(extremes.worst.pnl)}</b>
+              <span>
+                {extremes.worst.t.pair} {extremes.worst.t.direction === 'long' ? '▲' : '▼'} · {extremes.worst.t.date}
+                {extremes.worst.r !== null && <> · {fmtR(extremes.worst.r)}</>}
+                {extremes.worst.t.setup && <> · {extremes.worst.t.setup}</>}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="calc-strip big">
         <div><small>Trades</small><strong>{a.total}</strong></div>
