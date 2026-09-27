@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Trade } from '../types'
 import { calcTrade, fmtMoney, fmtR } from '../lib/calc'
-import { addWeeks, analyzeWeek, emotionImpactOf, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
+import { addWeeks, analyzeMonthView, analyzeWeek, emotionImpactOf, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
 import { downloadCsv, weeklySummaryCsv } from '../lib/csv'
 
 interface Props {
@@ -63,6 +63,8 @@ function GroupTable(props: {
 export default function WeeklyReview({ trades }: Props) {
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()))
   const [csvDone, setCsvDone] = useState(false)
+  const [view, setView] = useState<'week' | 'month'>('week')
+  const months = useMemo(() => analyzeMonths(trades), [trades])
 
   const a = useMemo(() => analyzeWeek(trades, weekStart), [trades, weekStart])
   const rDist = useMemo(() => rDistribution(a.closedTrades), [a.closedTrades])
@@ -170,6 +172,38 @@ export default function WeeklyReview({ trades }: Props) {
         </div>
       )}
 
+      <div className="view-toggle">
+        <div className="seg small">
+          <button type="button" className={view === 'week' ? 'active' : ''} onClick={() => setView('week')}>By week</button>
+          <button type="button" className={view === 'month' ? 'active' : ''} onClick={() => setView('month')}>By month</button>
+        </div>
+      </div>
+
+      {view === 'month' ? (
+        <div className="month-grid">
+          {months.length === 0 && <p className="empty small-empty">No months with trades yet.</p>}
+          {months.map(m => {
+            const maxAbs = Math.max(1, ...months.map(x => Math.abs(x.netPnl)))
+            const w = Math.min(100, (Math.abs(m.netPnl) / maxAbs) * 100)
+            return (
+              <div key={m.key} className="month-card">
+                <div className="mc-head">
+                  <b>{m.label}</b>
+                  <strong style={{ color: m.netPnl > 0 ? 'var(--green)' : m.netPnl < 0 ? 'var(--red)' : undefined }}>
+                    {fmtMoney(m.netPnl)}
+                  </strong>
+                </div>
+                <div className="mc-bar">
+                  <div className={m.netPnl >= 0 ? 'mc-fill pos' : 'mc-fill neg'} style={{ width: `${w}%` }} />
+                </div>
+                <p className="mc-sub">
+                  {m.total} trade{m.total === 1 ? '' : 's'} · {m.winRate !== null ? `${Math.round(m.winRate * 100)}%` : '—'} WR · {fmtR(m.netR)} · <span className="green">{m.greenDays}▲</span> <span className="red">{m.redDays}▼</span>
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
       <div className="calc-strip big">
         <div><small>Trades</small><strong>{a.total}</strong></div>
         <div><small>Win rate</small><strong>{a.winRate !== null ? `${Math.round(a.winRate * 100)}%` : '—'}</strong></div>
@@ -317,6 +351,7 @@ export default function WeeklyReview({ trades }: Props) {
           {notes.map((n, i) => <li key={i}>{n}</li>)}
         </ul>
       </div>
+      )}
     </section>
   )
 }

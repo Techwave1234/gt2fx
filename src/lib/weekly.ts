@@ -242,6 +242,69 @@ export function emotionImpactOf(closedTrades: Trade[]): EmotionImpact {
   return { rows, baseAvg: baseRN ? baseRSum / baseRN : null, baseCount }
 }
 
+export interface MonthStat {
+  /** YYYY-MM */
+  key: string
+  /** e.g. "Sep 2026" */
+  label: string
+  total: number
+  closedCount: number
+  wins: number
+  losses: number
+  winRate: number | null
+  netPnl: number
+  netR: number
+  greenDays: number
+  redDays: number
+}
+
+/** Month-by-month aggregation over all trades, newest month first. */
+export function analyzeMonths(allTrades: Trade[]): MonthStat[] {
+  const months = new Map<string, { trades: Trade[]; pnlByDate: Map<string, number> }>()
+  for (const t of allTrades) {
+    const key = t.date.slice(0, 7)
+    if (!/^\d{4}-\d{2}$/.test(key)) continue
+    if (!months.has(key)) months.set(key, { trades: [], pnlByDate: new Map() })
+    const m = months.get(key)!
+    m.trades.push(t)
+    if (t.result !== 'open') {
+      const pnl = calcTrade(t).pnl
+      if (pnl !== null) m.pnlByDate.set(t.date, (m.pnlByDate.get(t.date) ?? 0) + pnl)
+    }
+  }
+
+  const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' })
+  const out: MonthStat[] = []
+  for (const [key, m] of months) {
+    const closed = m.trades.filter(t => t.result !== 'open')
+    let wins = 0, losses = 0, netPnl = 0, netR = 0
+    for (const t of closed) {
+      if (t.result === 'win') wins++
+      else if (t.result === 'loss') losses++
+      const c = calcTrade(t)
+      if (c.pnl !== null) netPnl += c.pnl
+      if (c.rMultiple !== null) netR += c.rMultiple
+    }
+    const decided = wins + losses
+    const days = [...m.pnlByDate.values()]
+    const label = fmt.format(new Date(`${key}-01T00:00:00`))
+    out.push({
+      key,
+      label,
+      total: m.trades.length,
+      closedCount: closed.length,
+      wins,
+      losses,
+      winRate: decided ? wins / decided : null,
+      netPnl,
+      netR,
+      greenDays: days.filter(v => v > 0).length,
+      redDays: days.filter(v => v < 0).length,
+    })
+  }
+  return out.sort((a, b) => b.key.localeCompare(a.key))
+}
+
 const R_BUCKETS: { label: string; tone: RBucket['tone']; test: (r: number) => boolean }[] = [
   { label: '≤−2R', tone: 'bad', test: r => r <= -2 },
   { label: '−2…−1', tone: 'bad', test: r => r >= -2 && r < -1 },

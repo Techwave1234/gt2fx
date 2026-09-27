@@ -621,6 +621,22 @@ input, select, textarea, button { font-family: inherit; }
   100% { transform: translate(var(--drift, 0px), 105vh) rotate(720deg); opacity: 0; }
 }
 
+/* ---------- Monthly view ---------- */
+.view-toggle { display: flex; justify-content: center; margin: 12px 0 2px; }
+.month-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.month-card {
+  background: var(--bg-soft); border: 1px solid var(--line); border-radius: 12px;
+  padding: 11px 13px;
+}
+.mc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mc-head b { font-size: 14px; }
+.mc-head strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.mc-bar { height: 7px; border-radius: 4px; background: rgba(35, 46, 74, 0.6); margin-top: 8px; overflow: hidden; }
+.mc-fill { height: 100%; border-radius: 4px; }
+.mc-fill.pos { background: linear-gradient(90deg, rgba(47, 216, 130, 0.6), var(--green)); }
+.mc-fill.neg { background: linear-gradient(90deg, rgba(255, 93, 108, 0.6), var(--red)); }
+.mc-sub { font-size: 11.5px; color: var(--muted); margin: 7px 0 0; }
+
 /* ---------- Desktop tweaks ---------- */
 @media (min-width: 640px) {
   .app { padding-bottom: 40px; }
