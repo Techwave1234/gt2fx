@@ -101,17 +101,31 @@ export default function App() {
     return { current, best }
   }, [journal.checklists])
 
-  /** Track the best streak ever seen so a new record fires exactly once */
-  const [recordStreak, setRecordStreak] = useState<number | null>(null)
+  /** Best streak ever — persisted so records (and celebrations) survive refreshes */
+  const RECORD_KEY = 'gt2fx.streak.record'
+  const [recordStreak, setRecordStreak] = useState<number>(() => {
+    try {
+      const v = Number(localStorage.getItem(RECORD_KEY))
+      return Number.isFinite(v) && v > 0 ? v : 0
+    } catch {
+      return 0
+    }
+  })
   useEffect(() => {
-    if (disciplineStreak.current > 0 && disciplineStreak.current > (recordStreak ?? 0)) {
-      setRecordStreak(disciplineStreak.current)
+    if (disciplineStreak.current > recordStreak) {
+      const next = disciplineStreak.current
+      setRecordStreak(next)
       setCelebrating(true)
       // Sound-free haptic buzz (Android; silently unsupported on iOS Safari)
       try {
         navigator.vibrate?.([40, 60, 40, 60, 110])
       } catch {
         /* no haptics available — confetti is enough */
+      }
+      try {
+        localStorage.setItem(RECORD_KEY, String(next))
+      } catch {
+        /* storage unavailable — record just won't persist */
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
