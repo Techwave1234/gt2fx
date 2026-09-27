@@ -1,6 +1,10 @@
 import type { ChecklistState, DayNotes, JournalState, Trade } from '../types'
 import { EMPTY_CHECKLIST, EMPTY_DAY_NOTES } from '../types'
 
+export function applyClear(s: JournalState): JournalState {
+  return { trades: [], checklists: {}, dayNotes: {}, preTradeEnforce: s.preTradeEnforce, aiConfig: s.aiConfig, aiHistory: [] }
+}
+
 export interface ImportPayload {
   trades: Trade[]
   checklists: Record<string, ChecklistState>
@@ -9,16 +13,13 @@ export interface ImportPayload {
   aiHistory?: JournalState['aiHistory']
 }
 
-export function applyClear(s: JournalState): JournalState {
-  return { trades: [], checklists: {}, dayNotes: {}, aiConfig: s.aiConfig, aiHistory: [] }
-}
-
 export function applyImport(s: JournalState, data: ImportPayload, mode: 'replace' | 'merge'): JournalState {
   if (mode === 'replace') {
     return {
       trades: [...data.trades].sort((a, b) => b.createdAt - a.createdAt),
       checklists: data.checklists,
       dayNotes: data.dayNotes ?? {},
+      preTradeEnforce: s.preTradeEnforce,
       aiConfig: data.aiConfig ?? s.aiConfig,
       aiHistory: data.aiHistory ?? [],
     }
@@ -75,6 +76,7 @@ export function applyImport(s: JournalState, data: ImportPayload, mode: 'replace
     trades: merged,
     checklists,
     dayNotes: notes,
+    preTradeEnforce: s.preTradeEnforce,
     aiConfig: s.aiConfig,
     aiHistory: s.aiHistory,
   }

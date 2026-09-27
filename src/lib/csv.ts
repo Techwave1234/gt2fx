@@ -86,7 +86,7 @@ export function weeklySummaryCsv(trades: Trade[]): string {
   }
 
   const weeks = [...byWeek.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-  for (const [weekStartISO, weekTrades] of weeks) {
+  for (const [weekStartISO] of weeks) {
     const a = analyzeWeek(trades, new Date(`${weekStartISO}T00:00:00`))
     const s = summarize(a.closedTrades)
     const decided = s.wins + s.losses

@@ -1,4 +1,4 @@
-import type { ChecklistState, DayNotes, Trade } from '../types'
+import type { AIProvider, ChecklistState, DayNotes, Trade } from '../types'
 import { backupFileName, buildPayload, downloadBackup, type BackupPayload } from './backup'
 import { markExported } from './backupReminder'
 
@@ -65,7 +65,7 @@ export function runSundayBackup(parts: {
   trades: Trade[]
   checklists: Record<string, ChecklistState>
   dayNotes: Record<string, DayNotes>
-  aiConfig: { provider: string; apiKey: string; model: string }
+  aiConfig: { provider: AIProvider; apiKey: string; model: string }
   aiHistory: BackupPayload['aiHistory']
   weekTrades: number
 }): AutoBackupPayload {
@@ -73,7 +73,7 @@ export function runSundayBackup(parts: {
     trades: parts.trades,
     checklists: parts.checklists,
     dayNotes: parts.dayNotes,
-    aiConfig: parts.aiConfig as BackupPayload['aiConfig'],
+    aiConfig: parts.aiConfig,
     aiHistory: parts.aiHistory,
   })
   const fileName = backupFileName('auto-sunday')

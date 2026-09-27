@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Trade } from '../types'
 import { calcTrade, fmtMoney, fmtR } from '../lib/calc'
-import { addWeeks, analyzeMonthView, analyzeWeek, emotionImpactOf, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
+import { addWeeks, analyzeMonths, analyzeWeek, emotionImpactOf, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
 import { downloadCsv, weeklySummaryCsv } from '../lib/csv'
 
 interface Props {
@@ -182,8 +182,8 @@ export default function WeeklyReview({ trades }: Props) {
       {view === 'month' ? (
         <div className="month-grid">
           {months.length === 0 && <p className="empty small-empty">No months with trades yet.</p>}
-          {months.map(m => {
-            const maxAbs = Math.max(1, ...months.map(x => Math.abs(x.netPnl)))
+          {months.map((m: import('../lib/weekly').MonthStat) => {
+            const maxAbs = Math.max(1, ...months.map((x: import('../lib/weekly').MonthStat) => Math.abs(x.netPnl)))
             const w = Math.min(100, (Math.abs(m.netPnl) / maxAbs) * 100)
             return (
               <div key={m.key} className="month-card">
@@ -204,6 +204,7 @@ export default function WeeklyReview({ trades }: Props) {
           })}
         </div>
       ) : (
+        <>
       <div className="calc-strip big">
         <div><small>Trades</small><strong>{a.total}</strong></div>
         <div><small>Win rate</small><strong>{a.winRate !== null ? `${Math.round(a.winRate * 100)}%` : '—'}</strong></div>
@@ -351,6 +352,7 @@ export default function WeeklyReview({ trades }: Props) {
           {notes.map((n, i) => <li key={i}>{n}</li>)}
         </ul>
       </div>
+        </>
       )}
     </section>
   )

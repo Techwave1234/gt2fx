@@ -104,7 +104,10 @@ export function detectKillzone(date: string, time: string): KillzoneDetection | 
   const base = `${date}T${/^\d{2}:\d{2}$/.test(time) ? time : '00:00'}:00`
   const instant = new Date(base)
   if (isNaN(instant.getTime())) return null
-  if (!/^\d{2}:\d{2}$/.test(time)) instant.setHours(...new Date().toTimeString().slice(0, 5).split(':').map(Number))
+  if (!/^\d{2}:\d{2}$/.test(time)) {
+    const now = new Date()
+    instant.setHours(now.getHours(), now.getMinutes(), 0, 0)
+  }
 
   const ny = nyMinutes(instant)
   if (ny === null) return null

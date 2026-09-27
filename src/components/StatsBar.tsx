@@ -10,7 +10,7 @@ export default function StatsBar({ trades }: Props) {
   const stats = useMemo(() => {
     const closed = trades.filter(t => t.result !== 'open')
     let wins = 0, losses = 0, be = 0, netPnl = 0, netR = 0
-    let streak = 0, bestStreak = 0, worstStreak = 0, cur = 0
+    let bestStreak = 0, worstStreak = 0, cur = 0
     const pairs = new Map<string, { n: number; pnl: number }>()
     const byDay = new Map<string, number>()
 

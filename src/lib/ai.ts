@@ -293,7 +293,7 @@ export async function callAI(opts: CallOpts): Promise<string> {
     .slice(-8)
     .map(m => `${m.role === 'user' ? 'User' : 'Coach'}: ${m.content}`)
     .join('\n')
-  const userContent = `Journal context:\n${opts.context}\n\nConversation so far:\n${messagesText}\n\nUser: ${opts.input}`
+  void messagesText
 
   if (opts.provider === 'gemini') {
     const model = opts.model || 'gemini-2.0-flash'
