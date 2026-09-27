@@ -107,6 +107,12 @@ export default function App() {
     if (disciplineStreak.current > 0 && disciplineStreak.current > (recordStreak ?? 0)) {
       setRecordStreak(disciplineStreak.current)
       setCelebrating(true)
+      // Sound-free haptic buzz (Android; silently unsupported on iOS Safari)
+      try {
+        navigator.vibrate?.([40, 60, 40, 60, 110])
+      } catch {
+        /* no haptics available — confetti is enough */
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disciplineStreak.current])
