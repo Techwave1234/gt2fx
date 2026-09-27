@@ -584,6 +584,8 @@ input, select, textarea, button { font-family: inherit; }
 .loss-emo .chip:hover { border-color: var(--red); color: var(--red); }
 .loss-emo-actions { display: flex; justify-content: space-between; margin-top: 8px; }
 
+.week-actions { display: flex; gap: 4px; }
+
 /* ---------- Desktop tweaks ---------- */
 @media (min-width: 640px) {
   .app { padding-bottom: 40px; }

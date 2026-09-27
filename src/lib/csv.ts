@@ -1,6 +1,7 @@
 import type { Trade } from '../types'
-import { calcTrade, fmtNum } from './calc'
+import { calcTrade, fmtNum, summarize } from './calc'
 import { todayISO } from './backup'
+import { startOfWeek, addDays, toISODate, analyzeWeek } from './weekly'
 
 /** Quote every field; double up embedded quotes. Excel/Sheets-safe. */
 function esc(value: string | number | null | undefined): string {
@@ -63,6 +64,56 @@ export function tradesToCsv(trades: Trade[]): string {
   // \r\n line endings + UTF-8 BOM so Excel opens it cleanly
   const body = rows.map(r => r.join(',')).join('\r\n')
   return '\uFEFF' + body + '\r\n'
+}
+
+/** One row per week (oldest → newest) covering every week that has trades. */
+export function weeklySummaryCsv(trades: Trade[]): string {
+  const head = [
+    'Week Start', 'Week End', 'Trades', 'Closed', 'Wins', 'Losses', 'Breakeven',
+    'Win Rate %', 'Net P/L $', 'Net R', 'Avg R per Trade', 'Green Days', 'Red Days',
+    'Best Setup', 'Worst Setup', 'Best Pair', 'Worst Pair',
+  ]
+  const rows: string[][] = [head]
+
+  // Group trades into weeks by their Monday
+  const byWeek = new Map<string, Trade[]>()
+  for (const t of trades) {
+    const d = new Date(`${t.date}T00:00:00`)
+    if (isNaN(d.getTime())) continue
+    const key = toISODate(startOfWeek(d))
+    if (!byWeek.has(key)) byWeek.set(key, [])
+    byWeek.get(key)!.push(t)
+  }
+
+  const weeks = [...byWeek.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  for (const [weekStartISO, weekTrades] of weeks) {
+    const a = analyzeWeek(trades, new Date(`${weekStartISO}T00:00:00`))
+    const s = summarize(a.closedTrades)
+    const decided = s.wins + s.losses
+    const winRate = decided ? ((s.wins / decided) * 100).toFixed(1) : ''
+    const avgR = a.byDay.length && a.netR !== 0 ? (a.netR / a.closedTrades.filter(t => calcTrade(t).rMultiple !== null).length || '') : ''
+    const bestWorst = (list: { key: string; netPnl: number }[]) => {
+      const ranked = list.filter(g => g.netPnl !== 0)
+      const best = ranked[0]?.key ?? ''
+      const worst = ranked.length > 1 ? ranked[ranked.length - 1].key : ''
+      return [best, worst]
+    }
+    const [bestSetup, worstSetup] = bestWorst(a.bySetup)
+    const [bestPair, worstPair] = bestWorst(a.byPair)
+    const weekEnd = toISODate(addDays(new Date(`${weekStartISO}T00:00:00`), 6))
+
+    rows.push([
+      weekStartISO, weekEnd, String(a.total), String(a.closedCount),
+      String(s.wins), String(s.losses), String(s.breakeven),
+      winRate,
+      a.netPnl.toFixed(2),
+      a.netR.toFixed(2),
+      typeof avgR === 'number' ? avgR.toFixed(2) : '',
+      String(a.greenDays), String(a.redDays),
+      bestSetup, worstSetup, bestPair, worstPair,
+    ].map(esc))
+  }
+  return '\uFEFF' + rows.map(r => r.join(',')).join('\r\n') + '\r\n'
 }
 
 export function downloadCsv(content: string, fileName?: string): void {

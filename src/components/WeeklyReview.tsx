@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Trade } from '../types'
 import { fmtMoney, fmtR } from '../lib/calc'
 import { addWeeks, analyzeWeek, emotionImpactOf, rDistribution, startOfWeek, type GroupStat } from '../lib/weekly'
+import { downloadCsv, weeklySummaryCsv } from '../lib/csv'
 
 interface Props {
   trades: Trade[]
@@ -16,6 +17,11 @@ const EMOTION_TONE: Record<string, 'good' | 'warn' | 'bad'> = {
   greedy: 'bad',
   revengeful: 'bad',
   fearful: 'warn',
+}
+
+function todayIso(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function GroupTable(props: {
@@ -56,6 +62,7 @@ function GroupTable(props: {
 
 export default function WeeklyReview({ trades }: Props) {
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()))
+  const [csvDone, setCsvDone] = useState(false)
 
   const a = useMemo(() => analyzeWeek(trades, weekStart), [trades, weekStart])
   const rDist = useMemo(() => rDistribution(a.closedTrades), [a.closedTrades])
@@ -98,6 +105,12 @@ export default function WeeklyReview({ trades }: Props) {
     return out
   }, [a, emotionImpact])
 
+  function exportWeeklyCsv() {
+    downloadCsv(weeklySummaryCsv(trades), `gt2fx-weekly-summary-${todayIso()}.csv`)
+    setCsvDone(true)
+    setTimeout(() => setCsvDone(false), 2500)
+  }
+
   return (
     <section className="card weekly">
       <header className="week-nav">
@@ -108,15 +121,12 @@ export default function WeeklyReview({ trades }: Props) {
             <button type="button" className="link-btn" onClick={() => setWeekStart(now)}>jump to this week</button>
           )}
         </div>
-        <button
-          type="button"
-          className="btn mini ghost"
-          onClick={() => setWeekStart(w => addWeeks(w, 1))}
-          disabled={isThisWeek}
-          aria-label="Next week"
-        >
-          →
-        </button>
+        <div className="week-actions">
+          <button type="button" className="btn mini ghost" onClick={exportWeeklyCsv} disabled={trades.length === 0} title="One row per week: stats, best/worst setup and pair">
+            {csvDone ? '✓' : '⬇ CSV'}
+          </button>
+          <button type="button" className="btn mini ghost" onClick={() => setWeekStart(w => addWeeks(w, 1))} disabled={isThisWeek} aria-label="Next week">→</button>
+        </div>
       </header>
 
       <div className="calc-strip big">
