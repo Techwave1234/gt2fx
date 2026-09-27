@@ -4,8 +4,8 @@ import { BIAS_OPTIONS, EMOTION_OPTIONS, MODEL_OPTIONS, POI_OPTIONS, SESSION_OPTI
 import { calcTrade, fmtMoney, fmtNum, fmtR } from '../lib/calc'
 import { newTradeDefaults } from '../hooks/useJournal'
 import { KILLZONES, detectKillzone, killzoneById } from '../lib/killzones'
-import { PAIR_SYMBOLS } from '../lib/pairs'
 import { PRETRADE_CHECKS, alignmentOf, evalPreTrade, type Alignment } from '../lib/pretrade'
+import PairPicker from './PairPicker'
 
 interface Props {
   open: boolean
@@ -111,15 +111,10 @@ export default function TradeForm({ open, onClose, onSave, prefill, enforce = fa
             <span>Time</span>
             <input type="time" value={t.time} onChange={e => set('time', e.target.value)} />
           </label>
-          <label className="field">
+          <div className="field">
             <span>Pair</span>
-            <input list="pairs" value={t.pair} onChange={e => set('pair', e.target.value.toUpperCase())} placeholder="XAUUSD" required />
-            <datalist id="pairs">
-              {PAIR_SYMBOLS.map(p => (
-                <option key={p} value={p} />
-              ))}
-            </datalist>
-          </label>
+            <PairPicker value={t.pair} onChange={v => set('pair', v)} />
+          </div>
           <div className="field">
             <span>Direction</span>
             <div className="seg">

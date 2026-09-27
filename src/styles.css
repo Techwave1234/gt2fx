@@ -528,6 +528,31 @@ input, select, textarea, button { font-family: inherit; }
 .ei-val.muted-val { color: var(--muted); font-weight: 600; }
 .ei-n { color: var(--muted); text-align: right; font-size: 11px; }
 
+/* ---------- Pair picker ---------- */
+.pair-picker { position: relative; }
+.pp-pop {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
+  background: var(--card); border: 1px solid var(--card-edge); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 10px;
+}
+.pp-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.pp-tab {
+  background: var(--bg-soft); border: 1px solid var(--line); color: var(--muted);
+  border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.pp-tab.active { border-color: var(--blue); color: var(--blue); background: rgba(79, 140, 255, 0.1); }
+.pp-list { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.pp-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: transparent; border: 0; color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; text-align: left;
+}
+.pp-item:hover { background: var(--bg-soft); }
+.pp-item.selected { background: rgba(79, 140, 255, 0.12); }
+.pp-sym { font-weight: 700; letter-spacing: 0.3px; }
+.pp-cat { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.pp-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 12px 0; margin: 0; }
+
 /* ---------- Desktop tweaks ---------- */
 @media (min-width: 640px) {
   .app { padding-bottom: 40px; }
