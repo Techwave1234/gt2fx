@@ -1,4 +1,5 @@
 import type { Trade, TradeResult } from '../types'
+import { pairSpec } from './pairs'
 
 export interface TradeCalc {
   /** Planned risk in price distance (absolute) */
@@ -19,33 +20,14 @@ export interface TradeCalc {
   suggestedLots: number | null
 }
 
-const PIP_SIZE: Record<string, number> = {
-  XAUUSD: 0.1,
-  EURUSD: 0.0001,
-  GBPUSD: 0.0001,
-  USDJPY: 0.01,
-  GBPJPY: 0.01,
-  AUDUSD: 0.0001,
-  USDCAD: 0.0001,
-  NZDUSD: 0.0001,
-  USDCHF: 0.0001,
-  EURJPY: 0.01,
-  BTCUSD: 1,
-  ETHUSD: 0.1,
-  NAS100: 1,
-  US30: 1,
-  SPX500: 0.1,
-}
-
-/** Rough pip value in USD per standard lot (fallback 10) */
-export function pipValueUsd(pair: string): number {
-  if (pair.endsWith('USD')) return 10
-  if (pair.startsWith('USD')) return 10 // approximation for USD-quoted pairs
-  return 10
-}
-
+/** Pip size for any known pair (falls back to FX default 0.0001) */
 export function pipSize(pair: string): number {
-  return PIP_SIZE[pair.toUpperCase()] ?? 0.0001
+  return pairSpec(pair)?.pipSize ?? 0.0001
+}
+
+/** Approx USD pip value per 1.0 lot for any known pair (fallback 10) */
+export function pipValueUsd(pair: string): number {
+  return pairSpec(pair)?.pipValue ?? 10
 }
 
 export function pipsBetween(pair: string, a: number, b: number): number {

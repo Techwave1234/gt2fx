@@ -1,5 +1,6 @@
 import type { AIMessage, AIProvider, Bias, ChecklistState, Trade } from '../types'
 import { calcTrade, fmtMoney, fmtR, summarize } from './calc'
+import { PAIR_MATCH_SOURCE, resolvePair } from './pairs'
 
 /* ------------------------------------------------------------------ */
 /* Context building — a compact snapshot of the journal for the model  */
@@ -67,7 +68,7 @@ Rules:
 /* Trade parsing from free text (offline + helper for real AI too)     */
 /* ------------------------------------------------------------------ */
 
-const PAIR_RE = /\b(xauusd|gold|xagusd|silver|eurusd|gbpusd|usdjpy|gbpjpy|audusd|usdcad|nzdusd|usdchf|eurjpy|btcusd|ethusd|nas100|us30|spx500)\b/i
+const PAIR_RE = new RegExp(`\\b(${PAIR_MATCH_SOURCE})\\b`, 'i')
 
 export interface ParsedFill {
   patch: Partial<Trade>
@@ -91,7 +92,7 @@ export function parseFillText(text: string): ParsedFill | null {
   const num = (v: string | undefined): number | null =>
     v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v)
 
-  if (kv.pair) patch.pair = (kv.pair === 'gold' ? 'XAUUSD' : kv.pair).toUpperCase()
+  if (kv.pair) patch.pair = resolvePair(kv.pair)
   for (const tf of ['htf', 'mtf', 'ltf'] as const) {
     const raw = kv[`bias${tf}`] ?? kv[tf]
     const v = raw?.toLowerCase()
@@ -153,7 +154,7 @@ export function parsePlainTrade(text: string): Partial<Trade> | null {
 
   if (!pairMatch && !dirBuy && !dirSell && !sl && !tp) return null
   const patch: Partial<Trade> = {}
-  if (pairMatch) patch.pair = (pairMatch[1] === 'gold' ? 'xauusd' : pairMatch[1]).toUpperCase()
+  if (pairMatch) patch.pair = resolvePair(pairMatch[1])
   if (dirBuy !== dirSell) patch.direction = dirBuy ? 'long' : 'short'
   if (sl) patch.stopLoss = Number(sl[1])
   if (tp) patch.takeProfit = Number(tp[2] ?? tp[1])
@@ -192,7 +193,8 @@ export function offlineReply(
   const plain = parsePlainTrade(input)
   if (plain && (plain.entry !== undefined || plain.stopLoss !== undefined)) {
     const c = calcTrade({ ...(plain as Trade) })
-    const bits = [`Parsed a ${plain.direction ?? ''} ${plain.pair ?? 'trade'}`.replace(/\s+/g, ' ') + '.']
+    const aliasNote = plain.pair && plain.pair !== plain.pair.toUpperCase() ? ` (${plain.pair})` : ''
+    const bits = [`Parsed a ${plain.direction ?? ''} ${plain.pair ?? 'trade'}${aliasNote}`.replace(/\s+/g, ' ') + '.']
     if (c.rr !== null) bits.push(`Planned R:R ≈ ${c.rr.toFixed(2)} ${c.rr >= 2 ? '✅ solid' : c.rr >= 1.5 ? '⚠️ acceptable' : '❌ below 1.5 — consider skipping or improving the target'}.`)
     if (c.suggestedLots !== null && plain.riskPercent === undefined)
       bits.push(`At 1% risk the suggested size would be ~${c.suggestedLots} lots.`)

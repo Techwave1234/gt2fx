@@ -4,6 +4,7 @@ import { BIAS_OPTIONS, EMOTION_OPTIONS, MODEL_OPTIONS, POI_OPTIONS, SESSION_OPTI
 import { calcTrade, fmtMoney, fmtNum, fmtR } from '../lib/calc'
 import { newTradeDefaults } from '../hooks/useJournal'
 import { KILLZONES, detectKillzone, killzoneById } from '../lib/killzones'
+import { PAIR_SYMBOLS } from '../lib/pairs'
 
 interface Props {
   open: boolean
@@ -113,7 +114,7 @@ export default function TradeForm({ open, onClose, onSave, prefill }: Props) {
             <span>Pair</span>
             <input list="pairs" value={t.pair} onChange={e => set('pair', e.target.value.toUpperCase())} placeholder="XAUUSD" required />
             <datalist id="pairs">
-              {['XAUUSD', 'XAGUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'GBPJPY', 'AUDUSD', 'USDCAD', 'BTCUSD', 'NAS100', 'US30'].map(p => (
+              {PAIR_SYMBOLS.map(p => (
                 <option key={p} value={p} />
               ))}
             </datalist>
