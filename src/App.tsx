@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ChecklistState, Trade } from './types'
 import { useJournal } from './hooks/useJournal'
 import TradeForm from './components/TradeForm'
@@ -10,6 +10,7 @@ import DataBackup from './components/DataBackup'
 import BackupReminderBanner from './components/BackupReminderBanner'
 import PrintableSheet from './components/PrintableSheet'
 import KillzoneClock from './components/KillzoneClock'
+import Confetti from './components/Confetti'
 import AICoach from './components/AICoach'
 
 function todayKey(): string {
@@ -25,6 +26,7 @@ export default function App() {
   const [prefill, setPrefill] = useState<Partial<Trade> | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
   const [tab, setTab] = useState<'journal' | 'review'>('journal')
+  const [celebrating, setCelebrating] = useState(false)
   const [dateFilter, setDateFilter] = useState<'today' | 'all'>(`today`)
   const [resultFilter, setResultFilter] = useState<ResultFilter>('all')
   const [query, setQuery] = useState('')
@@ -98,6 +100,16 @@ export default function App() {
     if (current > best) best = current
     return { current, best }
   }, [journal.checklists])
+
+  /** Track the best streak ever seen so a new record fires exactly once */
+  const [recordStreak, setRecordStreak] = useState<number | null>(null)
+  useEffect(() => {
+    if (disciplineStreak.current > 0 && disciplineStreak.current > (recordStreak ?? 0)) {
+      setRecordStreak(disciplineStreak.current)
+      setCelebrating(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disciplineStreak.current])
 
   return (
     <div className="app">
@@ -188,6 +200,8 @@ export default function App() {
           </>
         )}
       </main>
+
+      {celebrating && <Confetti onDone={() => setCelebrating(false)} />}
 
       {/* Hidden printable sheet — only appears when printing */}
       <div className="print-root" aria-hidden>

@@ -607,6 +607,20 @@ input, select, textarea, button { font-family: inherit; }
 }
 .streak-chip:not(:empty):hover { border-color: var(--amber); }
 
+/* ---------- Confetti ---------- */
+.confetti {
+  position: fixed; inset: 0; z-index: 90; pointer-events: none; overflow: hidden;
+}
+.confetti-piece {
+  position: absolute; top: -12px; border-radius: 2px;
+  animation-name: confetti-fall; animation-timing-function: linear; animation-fill-mode: forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translate(0, -12px) rotate(0deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate(var(--drift, 0px), 105vh) rotate(720deg); opacity: 0; }
+}
+
 /* ---------- Desktop tweaks ---------- */
 @media (min-width: 640px) {
   .app { padding-bottom: 40px; }
