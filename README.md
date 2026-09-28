@@ -27,4 +27,17 @@ npm run preview  # serve the production build
 npm test         # Sunday-backup + backup round-trip suites (64 checks)
 ```
 
+## Using it day-to-day (no coding needed)
+
+Two double-click launchers are included for Windows:
+
+- **`Start GT2FX.bat`** — serves the built app at `http://localhost:4173`. That address just means "served from your own computer" — nothing is online and no data leaves your machine. Use this normally; it always serves the latest build. Keep the console window open while you use the journal.
+- **`Open GT2FX (no server).bat`** — opens `dist/index.html` directly in your browser: no server, no `localhost` address. Handy for a USB stick or another PC (the journal still works — data lives in that browser's `localStorage`).
+
+### Why does `index.html` look blank if I open it?
+
+The `index.html` in the project root is a **source template** — it points at `/src/main.tsx`, which only the Vite dev server can compile. A plain browser can't run it, so the page stays blank. That's expected.
+
+The real, double-clickable app is **`dist/index.html`**: `npm run build` inlines *all* JavaScript and CSS into that single file (via `vite-plugin-singlefile`), so it works straight from disk. Rebuild after code changes so it stays up to date.
+
 CI (`.github/workflows/test.yml`) runs the typecheck + test suite on every push.
