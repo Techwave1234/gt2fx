@@ -49,18 +49,17 @@ The online copy at https://techwave1234.github.io/gt2fx/ is deployed by **GitHub
 
 **Never point Pages at the repository root**: the root `index.html` is just the dev-server template (it loads `/src/main.tsx`), so the live site would show a blank page. If you ever deploy without Actions, publish the built `dist/` folder instead.
 
-## Killzone phone-call reminders
+## Killzone WhatsApp reminders (free)
 
-A scheduled workflow (`.github/workflows/killzone-call.yml`) checks the actual current time in New York every 15 minutes and **calls your phone** via Twilio at the four reminder slots: **6:00 ET** (London open), **8:00 ET** (NY AM open), **10:00 ET** (NY AM closing) and **14:00 ET** (London close). Because it reads the real America/New_York clock, US DST shifts are handled automatically.
+A scheduled workflow (`.github/workflows/killzone-reminder.yml`) checks the actual current time in New York every 15 minutes and **sends you a WhatsApp message** — free, via [CallMeBot](https://www.callmebot.com) — at the four reminder slots: **6:00 ET** (London open), **8:00 ET** (NY AM open), **10:00 ET** (NY AM closing) and **14:00 ET** (London close). Because it reads the real America/New_York clock, US DST shifts are handled automatically.
 
-One-time setup:
+One-time setup (≈2 minutes):
 
-1. Create a [Twilio](https://www.twilio.com) account, buy (or use a trial) phone number that can make outbound calls.
-2. Add four repository **Secrets** (Settings → Secrets and variables → Actions):
-   - `TWILIO_ACCOUNT_SID` — from the Twilio Console dashboard
-   - `TWILIO_AUTH_TOKEN` — same page
-   - `TWILIO_FROM_NUMBER` — your Twilio number, E.164 format (e.g. `+15017122661`)
-   - `TWILIO_TO_NUMBER` — your phone, E.164 format (e.g. a Nigerian number `08069530581` → `+2348069530581`)
-3. Actions → **killzone-call** → **Run workflow** → tick **“Place a test call right now”** to verify (you'll get one real test call, then a dry-run log).
+1. Save the bot number **+34 644 78 13 70** in your phone contacts (name it anything, e.g. "GT2FX").
+2. From WhatsApp, send it: `I allow callmebot to send me messages`
+3. It replies with your personal **apikey** — add it as a repository secret named `CALLMEBOT_APIKEY` (Settings → Secrets and variables → Actions). `CALLMEBOT_PHONE` is already set (`+2348069530581`).
+4. Actions → **killzone-reminder** → **Run workflow** → tick "Send a test message right now" — the WhatsApp should arrive within seconds.
 
-Without the secrets the workflow simply logs a clear message and exits — the journal itself never depends on it. To change the times or the spoken message, edit the `REMINDERS` array in `scripts/killzone-call.mjs`.
+It's free for personal use (the bot sends from its own number). If a message ever fails, the workflow run goes red — check the apikey first. To change the times or wording, edit the `REMINDERS` array in `scripts/killzone-reminder.mjs`.
+
+Without the apikey the workflow simply logs a clear message and exits — the journal itself never depends on it.

@@ -1,0 +1,50 @@
+name: killzone-reminder
+
+# Sends a free WhatsApp reminder via CallMeBot at the killzone times.
+# The scheduled run fires every 15 minutes; scripts/killzone-reminder.mjs
+# compares the *actual* current New York time (DST-correct) against the
+# reminder slots and only sends when one matches, so US DST shifts are
+# handled automatically.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   CALLMEBOT_PHONE   destination phone, E.164 (e.g. +2348069530581)
+#   CALLMEBOT_APIKEY  personal CallMeBot apikey — free activation in README
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Send a test message right now (ignores killzone times)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: killzone-reminder
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Killzone WhatsApp reminder
+        env:
+          CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+        run: |
+          if [ "${{ inputs.test }}" = "true" ]; then
+            node scripts/killzone-reminder.mjs --test --dry-run
+            node scripts/killzone-reminder.mjs --test
+          else
+            node scripts/killzone-reminder.mjs
+          fi
