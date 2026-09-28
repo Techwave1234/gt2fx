@@ -135,7 +135,9 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="logo">📓</span>
+          <span className="logo">
+            <img src="./gt2.jpeg" alt="GT2FX logo" />
+          </span>
           <div>
             <h1>GT2FX Journal</h1>
             <p className="sub">Discipline · Risk · Review</p>
