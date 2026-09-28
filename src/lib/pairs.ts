@@ -17,8 +17,7 @@ const fx = (symbol: string, jpy = false): PairSpec => ({
 })
 
 /**
- * Complete catalog: 42 FX pairs (majors, crosses, exotics), 7 metals,
- * 11 indices, 18 crypto, 3 energies — 81 instruments.
+ * Complete catalog: 41 FX pairs (majors, crosses, exotics), 7 metals, 11 indices, 18 crypto, 3 energies — 80 instruments.
  */
 export const PAIRS: PairSpec[] = [
   // --- FX majors ---
