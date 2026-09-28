@@ -308,11 +308,11 @@ interface CallOpts {
   imageDataUrl?: string
 }
 
-/** Split a `data:image/...;base64,...` URL into the parts Gemini's inline_data wants. */
-function dataUrlToGeminiPart(dataUrl: string): { mime_type: string; data: string } | null {
+/** Split a `data:image/...;base64,...` URL into the parts Gemini's inlineData wants. */
+function dataUrlToGeminiPart(dataUrl: string): { mimeType: string; data: string } | null {
   const m = dataUrl.match(/^data:([^;,]+);base64,(.*)$/s)
   if (!m) return null
-  return { mime_type: m[1], data: m[2] }
+  return { mimeType: m[1], data: m[2] }
 }
 
 export async function callAI(opts: CallOpts): Promise<string> {
@@ -341,7 +341,7 @@ export async function callAI(opts: CallOpts): Promise<string> {
             {
               role: 'user',
               parts: imagePart
-                ? [{ text: opts.input }, { inline_data: imagePart }]
+                ? [{ text: opts.input }, { inlineData: imagePart }]
                 : [{ text: opts.input }],
             },
           ],

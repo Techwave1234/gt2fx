@@ -6,13 +6,13 @@
  * anywhere except the provider you pick. It is intentionally NOT part of `npm test`
  * (it needs network + a key).
  *
- *   OPENAI_API_KEY=sk-...        tsx scripts/live-vision.ts
- *   GEMINI_API_KEY=...           tsx scripts/live-vision.ts
- *   OPENROUTER_API_KEY=sk-or-... tsx scripts/live-vision.ts
+ *   OPENAI_API_KEY=sk-...        tsx scripts/live-vision.ts [path/to/chart.png]
+ *   GEMINI_API_KEY=...           tsx scripts/live-vision.ts [path/to/chart.png]
+ *   OPENROUTER_API_KEY=sk-or-... tsx scripts/live-vision.ts [path/to/chart.png]
  *
- * It attaches a tiny 1x1 PNG purely to prove the multimodal payload is ACCEPTED
- * end-to-end (a provider that rejects the shape returns a 400 here). In the app you'd
- * attach a real chart screenshot instead.
+ * Pass an image path to test a real chart; without one it sends a tiny 1x1 PNG to prove
+ * the multimodal payload is ACCEPTED end-to-end (some providers reject degenerate 1x1
+ * images, so a real screenshot is the truer test).
  */
 
 // 1x1 transparent PNG
@@ -20,6 +20,25 @@ const TINY_PNG =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
 
 const { callAI, parseFillText, SYSTEM_PROMPT } = await import('../src/lib/ai.ts')
+
+function mimeFor(p: string): string {
+  const l = p.toLowerCase()
+  if (l.endsWith('.png')) return 'image/png'
+  if (l.endsWith('.webp')) return 'image/webp'
+  if (l.endsWith('.gif')) return 'image/gif'
+  return 'image/jpeg'
+}
+
+let imageDataUrl = TINY_PNG
+const imagePath = process.argv[2]
+if (imagePath) {
+  const { readFileSync } = await import('node:fs')
+  const buf = readFileSync(imagePath)
+  imageDataUrl = `data:${mimeFor(imagePath)};base64,${buf.toString('base64')}`
+  console.log(`Using image ${imagePath} — ${Math.round(buf.length / 1024)} KB, ${mimeFor(imagePath)}`)
+} else {
+  console.log('No image path given — using a 1x1 PNG (some providers reject degenerate images).')
+}
 
 const providers: { provider: 'openai' | 'gemini' | 'openrouter'; env: string; model: string }[] = [
   { provider: 'openai', env: 'OPENAI_API_KEY', model: 'gpt-4o-mini' },
@@ -46,12 +65,12 @@ for (const p of configured) {
       context: 'No trades logged yet.',
       history: [],
       input: 'Read this screenshot. If you can see a trade, reply with a FILL: line.',
-      imageDataUrl: TINY_PNG,
+      imageDataUrl,
     })
     console.log('OK — provider accepted the image payload.')
     const fill = parseFillText(reply)
     console.log(`Reply starts: ${reply.slice(0, 120).replace(/\s+/g, ' ')}`)
-    console.log(fill ? `FILL parsed → ${JSON.stringify(fill.patch)}` : 'No FILL line (expected for a 1x1 pixel).')
+    console.log(fill ? `FILL parsed → ${JSON.stringify(fill.patch)}` : 'No FILL line — nothing readable to fill (expected for a 1x1 pixel or a non-chart image).')
   } catch (e) {
     failures++
     console.error(`FAILED — ${e instanceof Error ? e.message : String(e)}`)

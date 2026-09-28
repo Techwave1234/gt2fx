@@ -83,10 +83,10 @@ check('hits Gemini generateContent', req.url.startsWith('https://generativelangu
 check('model default gemini-2.0-flash in URL', req.url.includes('/gemini-2.0-flash:generateContent'), req.url)
 check('key in URL', req.url.includes('key=sk-test'))
 check('one user turn', req.body.contents.length === 1 && req.body.contents[0].role === 'user', req.body.contents)
-check('parts = [text, inline_data]', req.body.contents[0].parts.length === 2, req.body.contents[0].parts)
+check('parts = [text, inlineData]', req.body.contents[0].parts.length === 2, req.body.contents[0].parts)
 check('text part correct', req.body.contents[0].parts[0].text === 'read this chart')
-check('inline_data mime_type correct', req.body.contents[0].parts[1].inline_data.mime_type === 'image/png', req.body.contents[0].parts[1])
-check('inline_data data has the prefix stripped', req.body.contents[0].parts[1].inline_data.data === IMG_DATA)
+check('inlineData mimeType correct', req.body.contents[0].parts[1].inlineData.mimeType === 'image/png', req.body.contents[0].parts[1])
+check('inlineData data has the prefix stripped', req.body.contents[0].parts[1].inlineData.data === IMG_DATA)
 check('systemInstruction present', req.body.systemInstruction.parts[0].text.includes('SYS'))
 check('reply parses as a fill', parseFillText(reply)?.patch.pair === 'EURUSD', reply)
 
