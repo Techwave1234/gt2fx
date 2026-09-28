@@ -48,3 +48,19 @@ CI (`.github/workflows/test.yml`) runs the typecheck + test suite on every push.
 The online copy at https://techwave1234.github.io/gt2fx/ is deployed by **GitHub Actions** (`.github/workflows/deploy-pages.yml`): every push runs `npm run build` and publishes the **`dist/` folder** through `actions/deploy-pages`. GitHub Pages must be set to **“GitHub Actions”** as its source (Settings → Pages) — *not* “Deploy from a branch”.
 
 **Never point Pages at the repository root**: the root `index.html` is just the dev-server template (it loads `/src/main.tsx`), so the live site would show a blank page. If you ever deploy without Actions, publish the built `dist/` folder instead.
+
+## Killzone phone-call reminders
+
+A scheduled workflow (`.github/workflows/killzone-call.yml`) checks the actual current time in New York every 15 minutes and **calls your phone** via Twilio at the four reminder slots: **6:00 ET** (London open), **8:00 ET** (NY AM open), **10:00 ET** (NY AM closing) and **14:00 ET** (London close). Because it reads the real America/New_York clock, US DST shifts are handled automatically.
+
+One-time setup:
+
+1. Create a [Twilio](https://www.twilio.com) account, buy (or use a trial) phone number that can make outbound calls.
+2. Add four repository **Secrets** (Settings → Secrets and variables → Actions):
+   - `TWILIO_ACCOUNT_SID` — from the Twilio Console dashboard
+   - `TWILIO_AUTH_TOKEN` — same page
+   - `TWILIO_FROM_NUMBER` — your Twilio number, E.164 format (e.g. `+15017122661`)
+   - `TWILIO_TO_NUMBER` — your phone, E.164 format (e.g. a Nigerian number `08069530581` → `+2348069530581`)
+3. Actions → **killzone-call** → **Run workflow** → tick **“Place a test call right now”** to verify (you'll get one real test call, then a dry-run log).
+
+Without the secrets the workflow simply logs a clear message and exits — the journal itself never depends on it. To change the times or the spoken message, edit the `REMINDERS` array in `scripts/killzone-call.mjs`.
