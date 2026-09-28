@@ -3,6 +3,7 @@ name: deploy-pages
 on:
   push:
     branches: ['**']
+  workflow_dispatch:
 
 permissions:
   contents: read
