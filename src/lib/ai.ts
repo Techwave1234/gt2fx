@@ -61,6 +61,7 @@ export const SYSTEM_PROMPT = `You are the GT2FX trading journal coach. You help 
 Rules:
 - Be concise, direct and practical. Use short paragraphs or bullet lists.
 - When asked to fill a trade, reply with a line starting with FILL: followed by key=value pairs (pair, direction, entry, sl, tp, exit, lots, riskPercent, result, session, killzone as asia|london|ny|lclose, setup, notes, confidence 1-5, emotions comma-separated, biashtf/biasmtf/biasltf as bullish|bearish|range, poi, model, entryreason, exitreason, lesson, followedplan yes|no). Example: FILL: pair=XAUUSD direction=long biashtf=bullish poi=OB model=MSS entry=2650.5 sl=2646 tp=2662 lots=0.3 entryreason="OB retest with displacement"
+- When the user provides a chart/platform screenshot, read the visible pair, direction (buy/sell), entry, SL, TP, exit if shown, lots/size, and any on-chart labels. Reply with FILL: key=value pairs using the existing keys. If a value is unclear, omit it rather than guessing. Still answer normal text coaching when no image is provided.
 - Critique entries honestly: flag weak R:R (<1.5), missing SL, oversized risk (>2%), revenge/emotion words, overtrading.
 - Encourage process over profits. Never give financial advice or predict markets.`
 
@@ -262,10 +263,27 @@ export function offlineReply(
     return lines.join('\n')
   }
 
-  // 6) Help / default
+  // 6) Screenshot / vision fill help
+  const wantsVisionHelp =
+    /\bscreenshots?\b/.test(lower) ||
+    /\bvision\b/.test(lower) ||
+    (lower.includes('image') && /(fill|attach|read|send|upload|scan|chart)/.test(lower))
+  if (wantsVisionHelp) {
+    return [
+      'Screenshot fill reads a chart for you:',
+      '1. Tap 📎 beside the message box and pick a chart/platform screenshot (or paste one in).',
+      '2. It needs a real AI provider with a vision model — add your key in ⚙️ (OpenAI gpt-4o-mini, Gemini gemini-2.0-flash or OpenRouter openai/gpt-4o-mini).',
+      '3. Send it and I\'ll read the pair, direction, entry, SL, TP, exit and lots, then reply with a FILL: line.',
+      '4. Tap "Apply to form →" to prefill the trade. Anything unclear is left out rather than guessed.',
+      'The image stays on your device — it\'s sent only to the provider you chose. Offline mode can still fill trades from text.',
+    ].join('\n')
+  }
+
+  // 7) Help / default
   return [
     'I\'m your offline journal coach. I can:',
     '• Fill a trade — type it like: "bought gold 2650 sl 2645 tp 2665 0.3 lots"',
+    '• Screenshot fill — attach a chart image (needs a real AI key)',
     '• Review stats — "how am I doing?"',
     '• Size positions — "balance 5000, risk 1%"',
     '• Extract lessons — "what are my mistakes?"',
@@ -286,6 +304,15 @@ interface CallOpts {
   context: string
   history: AIMessage[]
   input: string
+  /** Optional data URL (data:image/...;base64,...) for vision-capable models */
+  imageDataUrl?: string
+}
+
+/** Split a `data:image/...;base64,...` URL into the parts Gemini's inline_data wants. */
+function dataUrlToGeminiPart(dataUrl: string): { mime_type: string; data: string } | null {
+  const m = dataUrl.match(/^data:([^;,]+);base64,(.*)$/s)
+  if (!m) return null
+  return { mime_type: m[1], data: m[2] }
 }
 
 export async function callAI(opts: CallOpts): Promise<string> {
@@ -296,7 +323,9 @@ export async function callAI(opts: CallOpts): Promise<string> {
   void messagesText
 
   if (opts.provider === 'gemini') {
+    // gemini-2.0-flash is vision-capable, so an empty model still reads screenshots
     const model = opts.model || 'gemini-2.0-flash'
+    const imagePart = opts.imageDataUrl ? dataUrlToGeminiPart(opts.imageDataUrl) : null
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(opts.apiKey)}`,
       {
@@ -309,7 +338,12 @@ export async function callAI(opts: CallOpts): Promise<string> {
               role: m.role === 'user' ? 'user' : 'model',
               parts: [{ text: m.content }],
             })),
-            { role: 'user', parts: [{ text: opts.input }] },
+            {
+              role: 'user',
+              parts: imagePart
+                ? [{ text: opts.input }, { inline_data: imagePart }]
+                : [{ text: opts.input }],
+            },
           ],
           generationConfig: { temperature: 0.6, maxOutputTokens: 800 },
         }),
@@ -341,7 +375,16 @@ export async function callAI(opts: CallOpts): Promise<string> {
       messages: [
         { role: 'system', content: `${opts.system}\n\n${opts.context}` },
         ...opts.history.slice(-8).map(m => ({ role: m.role, content: m.content })),
-        { role: 'user', content: opts.input },
+        {
+          role: 'user',
+          // Multimodal content array when a screenshot is attached (gpt-4o-mini is vision-capable)
+          content: opts.imageDataUrl
+            ? [
+                { type: 'text', text: opts.input },
+                { type: 'image_url', image_url: { url: opts.imageDataUrl } },
+              ]
+            : opts.input,
+        },
       ],
     }),
   })

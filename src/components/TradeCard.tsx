@@ -93,7 +93,11 @@ export default function TradeCard({ trade: t, index, onUpdate, onDelete }: Props
             {' · '}Risk {fmtNum(t.riskPercent, 1)}%{t.balance ? ` · Balance ${fmtMoney(t.balance).replace('+', '')}` : ''}
           </p>
           {t.screenshotUrl && (
-            <p><a href={t.screenshotUrl} target="_blank" rel="noreferrer">📸 View screenshot</a></p>
+            t.screenshotUrl.startsWith('data:') ? (
+              <img className="shot-inline" src={t.screenshotUrl} alt="Trade screenshot" />
+            ) : (
+              <p><a href={t.screenshotUrl} target="_blank" rel="noreferrer">📸 View screenshot</a></p>
+            )
           )}
 
           {t.result === 'open' && !pickingEmotion && (

@@ -11,7 +11,9 @@
     "test:sunday": "tsx scripts/test-sunday.ts",
     "test:roundtrip": "tsx scripts/test-roundtrip.ts",
     "test:pretrade": "tsx scripts/test-pretrade.ts",
-    "test": "npm run test:sunday && npm run test:roundtrip && npm run test:pretrade"
+    "test:vision": "tsx scripts/test-vision.ts",
+    "test": "npm run test:sunday && npm run test:roundtrip && npm run test:pretrade && npm run test:vision",
+    "test:vision:live": "tsx scripts/live-vision.ts"
   },
   "dependencies": {
     "react": "^19.1.0",

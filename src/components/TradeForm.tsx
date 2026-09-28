@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Bias, Trade } from '../types'
 import { BIAS_OPTIONS, EMOTION_OPTIONS, MODEL_OPTIONS, POI_OPTIONS, SESSION_OPTIONS } from '../types'
 import { calcTrade, fmtMoney, fmtNum, fmtR } from '../lib/calc'
 import { newTradeDefaults } from '../hooks/useJournal'
+import { dataUrlBytes, formatBytes, readImageAsDataUrl } from '../lib/image'
 import { KILLZONES, detectKillzone, killzoneById } from '../lib/killzones'
 import { PRETRADE_CHECKS, alignmentOf, evalPreTrade, type Alignment } from '../lib/pretrade'
 import PairPicker from './PairPicker'
@@ -17,6 +18,9 @@ interface Props {
   enforce?: boolean
   onToggleEnforce?: (v: boolean) => void
 }
+
+/** Warn once an attached screenshot data URL gets big enough to bloat backups */
+const SCREENSHOT_WARN_BYTES = 1_200_000
 
 function NumField(props: {
   label: string
@@ -55,6 +59,18 @@ export default function TradeForm({ open, onClose, onSave, prefill, enforce = fa
   }
 
   const set = <K extends keyof Trade>(key: K, value: Trade[K]) => setT(prev => ({ ...prev, [key]: value }))
+
+  const shotRef = useRef<HTMLInputElement>(null)
+
+  async function attachScreenshot(file: File | null | undefined) {
+    if (!file || !file.type.startsWith('image/')) return
+    try {
+      // Moderate resolution keeps the journal's localStorage (and backups) light.
+      set('screenshotUrl', await readImageAsDataUrl(file, { maxDim: 1280, quality: 0.72 }))
+    } catch {
+      /* keep whatever is already in the URL field */
+    }
+  }
 
   const calc = useMemo(() => calcTrade(t), [t])
 
@@ -315,10 +331,46 @@ export default function TradeForm({ open, onClose, onSave, prefill, enforce = fa
             <button type="button" className={!t.followedPlan ? 'active sell' : ''} onClick={() => set('followedPlan', false)}>No</button>
           </div>
         </div>
-        <label className="field">
-          <span>Screenshot URL (optional)</span>
-          <input value={t.screenshotUrl} onChange={e => set('screenshotUrl', e.target.value)} placeholder="https://..." />
-        </label>
+        <div className="field">
+          <span>Screenshot (optional)</span>
+          <input
+            value={t.screenshotUrl.startsWith('data:') ? '' : t.screenshotUrl}
+            onChange={e => set('screenshotUrl', e.target.value)}
+            placeholder="Paste an image URL, or attach a file below"
+          />
+          <div className="shot-row">
+            <input
+              ref={shotRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={e => {
+                void attachScreenshot(e.target.files?.[0])
+                e.currentTarget.value = ''
+              }}
+            />
+            <button type="button" className="btn mini ghost" onClick={() => shotRef.current?.click()}>
+              📎 Attach image
+            </button>
+            {t.screenshotUrl.startsWith('data:') && (
+              <>
+                <img className="shot-thumb" src={t.screenshotUrl} alt="Screenshot preview" />
+                <button type="button" className="btn mini ghost" onClick={() => set('screenshotUrl', '')}>
+                  Remove
+                </button>
+              </>
+            )}
+          </div>
+          {t.screenshotUrl.startsWith('data:') && (
+            <small className={dataUrlBytes(t.screenshotUrl) > SCREENSHOT_WARN_BYTES ? 'shot-note warn' : 'shot-note'}>
+              Stored in this browser only ({formatBytes(dataUrlBytes(t.screenshotUrl))}){
+                dataUrlBytes(t.screenshotUrl) > SCREENSHOT_WARN_BYTES
+                  ? ' — large image, it will bloat your journal backup. Consider a smaller screenshot.'
+                  : '.'
+              }
+            </small>
+          )}
+        </div>
 
         <footer>
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>

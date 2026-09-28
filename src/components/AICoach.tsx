@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ClipboardEvent } from 'react'
 import type { AIMessage, AIProvider, ChecklistState, Trade } from '../types'
 import { buildContext, callAI, offlineReply, parseFillText, SYSTEM_PROMPT } from '../lib/ai'
+import { dataUrlBytes, formatBytes, readImageAsDataUrl } from '../lib/image'
 import { newTradeDefaults } from '../hooks/useJournal'
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 
 const QUICK_PROMPTS = [
   'Fill: bought gold 2650 sl 2645 tp 2665 0.3 lots',
+  'How does screenshot fill work?',
   'How am I doing?',
   'What are my mistakes?',
   'balance 5000, risk 1%',
@@ -36,7 +38,31 @@ export default function AICoach({
   const [busy, setBusy] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [image, setImage] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  /** Screenshot fill needs a real provider with a vision-capable model */
+  const canVision = aiConfig.provider !== 'offline' && !!aiConfig.apiKey
+
+  async function attachImage(file: File | null | undefined) {
+    if (!file || !file.type.startsWith('image/')) return
+    setErr(null)
+    try {
+      setImage(await readImageAsDataUrl(file, { maxDim: 1600, quality: 0.8 }))
+    } catch {
+      setErr('Could not read that image — try a PNG or JPG screenshot.')
+    }
+  }
+
+  function handlePaste(e: ClipboardEvent<HTMLInputElement>) {
+    const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'))
+    const file = item?.getAsFile()
+    if (file) {
+      e.preventDefault()
+      void attachImage(file)
+    }
+  }
 
   useEffect(() => {
     if (open) listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
@@ -44,11 +70,30 @@ export default function AICoach({
 
   async function send(text?: string) {
     const msg = (text ?? input).trim()
-    if (!msg || busy) return
+    const img = image
+    if ((!msg && !img) || busy) return
+
+    // Images are never sent in offline mode / without a key.
+    if (img && !canVision) {
+      if (!msg) {
+        setErr('Screenshot fill needs OpenAI, Gemini or OpenRouter with a vision model — connect a key in ⚙️. Offline mode can still fill trades from text.')
+        return
+      }
+      // There is text to work with, so fall through and send it without the image.
+    }
+    const useImage = img && canVision ? img : undefined
+
     setErr(null)
     setInput('')
+    setImage(null)
     setBusy(true)
-    const userMsg: AIMessage = { id: uid(), role: 'user', content: msg, at: Date.now() }
+    const userMsg: AIMessage = {
+      id: uid(),
+      role: 'user',
+      // The image itself is never persisted in history to keep localStorage light.
+      content: useImage ? `${msg || 'What do you see in this chart?'}  🖼️` : msg,
+      at: Date.now(),
+    }
     let reply = ''
     try {
       if (aiConfig.provider === 'offline' || !aiConfig.apiKey) {
@@ -62,11 +107,13 @@ export default function AICoach({
           system: SYSTEM_PROMPT,
           context: buildContext(trades, checklist),
           history,
-          input: msg,
+          input: msg || 'Read this chart screenshot and fill the trade if you can.',
+          imageDataUrl: useImage,
         })
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'AI request failed')
+      const m = e instanceof Error ? e.message : 'AI request failed'
+      setErr(`${m} — fell back to offline reply.`)
       reply = offlineReply(msg, trades, checklist) // graceful fallback
     } finally {
       setBusy(false)
@@ -148,6 +195,7 @@ export default function AICoach({
           <div className="ai-welcome">
             <p><b>GT2FX AI Coach</b></p>
             <p>I can fill trades from plain text, critique your entries, check risk, and extract lessons.</p>
+            <p className="sub">Attach a chart screenshot with 📎 (real AI key required) and I'll read the trade off it.</p>
             <div className="quick-prompts">
               {QUICK_PROMPTS.map(q => (
                 <button key={q} type="button" className="chip" onClick={() => send(q)}>{q}</button>
@@ -170,16 +218,53 @@ export default function AICoach({
           )
         })}
         {busy && <div className="ai-msg coach"><pre>…thinking</pre></div>}
-        {err && <div className="ai-msg coach error"><pre>{err} — fell back to offline reply.</pre></div>}
+        {err && <div className="ai-msg coach error"><pre>{err}</pre></div>}
       </div>
+
+      {image && (
+        <div className="ai-preview">
+          <img src={image} alt="Attached chart screenshot" />
+          <div className="ai-preview-info">
+            {canVision ? (
+              <small>Attached — the coach will read this chart when you send.</small>
+            ) : (
+              <small className="ai-warn">
+                Screenshot fill needs OpenAI, Gemini or OpenRouter with a vision model. This image stays on your device and won't be sent in offline mode.
+              </small>
+            )}
+            <small>{formatBytes(dataUrlBytes(image))}</small>
+          </div>
+          <button type="button" className="icon-btn" onClick={() => setImage(null)} aria-label="Remove attached image">✕</button>
+        </div>
+      )}
 
       <footer className="ai-input">
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+          onPaste={handlePaste}
           placeholder="Type a trade or question…"
         />
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={e => {
+            void attachImage(e.target.files?.[0])
+            e.currentTarget.value = ''
+          }}
+        />
+        <button
+          type="button"
+          className="btn ghost ai-attach"
+          onClick={() => fileRef.current?.click()}
+          title="Attach a chart screenshot"
+          aria-label="Attach a chart screenshot"
+        >
+          📎
+        </button>
         <button type="button" className="btn primary" onClick={() => send()} disabled={busy}>Send</button>
       </footer>
     </div>
