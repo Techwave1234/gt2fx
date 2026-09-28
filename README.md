@@ -1,6 +1,7 @@
 # GT2FX Trading Journal 📓
 
 [![test](https://github.com/Techwave1234/gt2fx/actions/workflows/test.yml/badge.svg)](https://github.com/Techwave1234/gt2fx/actions/workflows/test.yml)
+[![deploy-pages](https://github.com/Techwave1234/gt2fx/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Techwave1234/gt2fx/actions/workflows/deploy-pages.yml)
 
 ▶ **Use it here:** https://techwave1234.github.io/gt2fx/
 
@@ -41,3 +42,9 @@ The `index.html` in the project root is a **source template** — it points at `
 The real, double-clickable app is **`dist/index.html`**: `npm run build` inlines *all* JavaScript and CSS into that single file (via `vite-plugin-singlefile`), so it works straight from disk. Rebuild after code changes so it stays up to date.
 
 CI (`.github/workflows/test.yml`) runs the typecheck + test suite on every push.
+
+## How the live site deploys
+
+The online copy at https://techwave1234.github.io/gt2fx/ is deployed by **GitHub Actions** (`.github/workflows/deploy-pages.yml`): every push runs `npm run build` and publishes the **`dist/` folder** through `actions/deploy-pages`. GitHub Pages must be set to **“GitHub Actions”** as its source (Settings → Pages) — *not* “Deploy from a branch”.
+
+**Never point Pages at the repository root**: the root `index.html` is just the dev-server template (it loads `/src/main.tsx`), so the live site would show a blank page. If you ever deploy without Actions, publish the built `dist/` folder instead.
