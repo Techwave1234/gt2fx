@@ -10,14 +10,9 @@
  *   GEMINI_API_KEY=...           tsx scripts/live-vision.ts [path/to/chart.png]
  *   OPENROUTER_API_KEY=sk-or-... tsx scripts/live-vision.ts [path/to/chart.png]
  *
- * Pass an image path to test a real chart; without one it sends a tiny 1x1 PNG to prove
- * the multimodal payload is ACCEPTED end-to-end (some providers reject degenerate 1x1
- * images, so a real screenshot is the truer test).
+ * Pass a real chart/screenshot path. A degenerate 1x1 image is rejected by some providers,
+ * so the test requires an actual image to be meaningful.
  */
-
-// 1x1 transparent PNG
-const TINY_PNG =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
 
 const { callAI, parseFillText, SYSTEM_PROMPT } = await import('../src/lib/ai.ts')
 
@@ -29,16 +24,16 @@ function mimeFor(p: string): string {
   return 'image/jpeg'
 }
 
-let imageDataUrl = TINY_PNG
 const imagePath = process.argv[2]
-if (imagePath) {
-  const { readFileSync } = await import('node:fs')
-  const buf = readFileSync(imagePath)
-  imageDataUrl = `data:${mimeFor(imagePath)};base64,${buf.toString('base64')}`
-  console.log(`Using image ${imagePath} — ${Math.round(buf.length / 1024)} KB, ${mimeFor(imagePath)}`)
-} else {
-  console.log('No image path given — using a 1x1 PNG (some providers reject degenerate images).')
+if (!imagePath) {
+  console.error('Usage: tsx scripts/live-vision.ts <path/to/chart.png|jpg>')
+  console.error('Pass a real chart/screenshot — a degenerate image is rejected by providers and would test nothing.')
+  process.exit(0)
 }
+const { readFileSync } = await import('node:fs')
+const buf = readFileSync(imagePath)
+const imageDataUrl = `data:${mimeFor(imagePath)};base64,${buf.toString('base64')}`
+console.log(`Using image ${imagePath} — ${Math.round(buf.length / 1024)} KB, ${mimeFor(imagePath)}`)
 
 const providers: { provider: 'openai' | 'gemini' | 'openrouter'; env: string; model: string }[] = [
   { provider: 'openai', env: 'OPENAI_API_KEY', model: 'gpt-4o-mini' },
